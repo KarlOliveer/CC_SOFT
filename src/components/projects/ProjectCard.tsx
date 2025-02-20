@@ -23,6 +23,9 @@ type Priority = "low" | "medium" | "high";
 type Status = "pending" | "in-progress" | "complete";
 
 interface ProjectCardProps {
+  /** Flag que indica se o cartão deve ficar em modo escuro (true) ou claro (false) */
+  isDarkMode?: boolean;
+
   title?: string;
   description?: string;
   priority?: Priority;
@@ -51,6 +54,7 @@ const getStatusIcon = (status: Status) => {
 };
 
 const ProjectCard = ({
+  isDarkMode = false, // Por omissão, fica claro
   title = "Sample Project",
   description = "This is a sample project description that showcases the layout of the project card.",
   priority = "medium",
@@ -59,8 +63,13 @@ const ProjectCard = ({
   onStatusChange = () => {},
   onPriorityChange = () => {},
 }: ProjectCardProps) => {
+  // Escolhe as classes de fundo/texto conforme a flag
+  const containerClasses = isDarkMode
+    ? "!bg-gray-800 !text-gray-100"
+    : "!bg-white !text-gray-900";
+
   return (
-    <Card className="w-[320px] bg-white dark:bg-gray-800">
+    <Card className={`w-[320px] shadow border rounded-xl ${containerClasses}`}>
       <CardHeader>
         <div className="flex justify-between items-start">
           <CardTitle className="text-lg font-semibold">{title}</CardTitle>
@@ -68,14 +77,12 @@ const ProjectCard = ({
             {priority.charAt(0).toUpperCase() + priority.slice(1)}
           </Badge>
         </div>
-        <CardDescription className="text-sm text-gray-500 dark:text-gray-400">
+        <CardDescription className="text-sm">
           Due: {dueDate}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-gray-600 dark:text-gray-300">
-          {description}
-        </p>
+        <p className="text-sm">{description}</p>
         <div className="mt-4 flex items-center gap-2">
           {getStatusIcon(status)}
           <span className="text-sm font-medium capitalize">{status}</span>
@@ -141,9 +148,7 @@ const ProjectCard = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() =>
-                (window.location.href = `/projetos/editar/${title}`)
-              }
+              onClick={() => (window.location.href = `/projetos/editar/${title}`)}
             >
               Edit
             </Button>
@@ -152,9 +157,7 @@ const ProjectCard = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() =>
-                window.open(`/projetos/relatorio/${title}`, "_blank")
-              }
+              onClick={() => window.open(`/projetos/relatorio/${title}`, "_blank")}
             >
               Download Report
             </Button>

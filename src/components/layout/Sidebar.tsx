@@ -13,6 +13,10 @@ import {
   Users,
 } from "lucide-react";
 
+// Importa a imagem que está em src/assets/mcm_logo.png
+import logo from "@/assets/mcm_logo.png";
+import light_logo from "@/assets/mcm_logo_light.png";
+
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/" },
   { label: "Projetos", icon: FileText, href: "/projetos" },
@@ -34,21 +38,33 @@ const Sidebar = () => {
     localStorage.removeItem("user");
     navigate("/login");
   };
+
   const location = useLocation();
 
   return (
     <div className="w-64 h-screen bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
       {/* Logo */}
-      <div className="p-6">
-        <img src="/mcm-logo.png" alt="MCM Systems" className="h-8" />
+      <div className="p-6 relative">
+        {/* Logo para modo claro */}
+        <img
+          src={logo}
+          alt="MCM Systems (light mode)"
+          className="dark:hidden h-10 w-auto"
+        />
+        {/* Logo para modo escuro */}
+        <img
+          src={light_logo}
+          alt="MCM Systems (dark mode)"
+          className="hidden dark:block h-10 w-auto"
+        />
       </div>
 
-      {/* Title */}
+      {/* Título */}
       <div className="px-6 mb-6">
         <h2 className="text-lg font-semibold">Gerenciamento Técnico</h2>
       </div>
 
-      {/* Navigation */}
+      {/* Navegação */}
       <nav className="flex-1">
         {navItems
           .filter((item) => !item.adminOnly || isAdmin)
@@ -62,7 +78,7 @@ const Sidebar = () => {
                   "flex items-center gap-3 px-6 py-3 text-sm font-medium transition-colors",
                   isActive
                     ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
-                    : "text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400",
+                    : "text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
                 )}
               >
                 <item.icon className="h-5 w-5" />
@@ -72,7 +88,7 @@ const Sidebar = () => {
           })}
       </nav>
 
-      {/* User section */}
+      {/* Secção de utilizador */}
       <div className="mt-auto p-4 border-t border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">{username}</span>

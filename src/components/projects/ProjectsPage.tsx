@@ -24,9 +24,8 @@ interface Project {
 }
 
 const ProjectsPage = () => {
-  const [editingProject, setEditingProject] = React.useState<string | null>(
-    null,
-  );
+  const [editingProject, setEditingProject] = React.useState<string | null>(null);
+
   const [activeProjects, setActiveProjects] = React.useState<Project[]>([
     {
       id: "1",
@@ -49,9 +48,8 @@ const ProjectsPage = () => {
       status: "Em Andamento",
     },
   ]);
-  const [completedProjects, setCompletedProjects] = React.useState<Project[]>(
-    [],
-  );
+
+  const [completedProjects, setCompletedProjects] = React.useState<Project[]>([]);
 
   const handleProjectComplete = (projectId: string) => {
     const project = activeProjects.find((p) => p.id === projectId);
@@ -70,6 +68,9 @@ const ProjectsPage = () => {
     };
     setActiveProjects([...activeProjects, newProject]);
   };
+
+  // 1) Put "Todos" and other categories in a single array
+  const categories = ["Todos", "PC", "Calibrador", "Placa", "Outros"];
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -90,28 +91,36 @@ const ProjectsPage = () => {
       <div className="flex gap-8">
         {/* Left sidebar */}
         <div className="w-64 space-y-1">
-          <div className="flex items-center justify-between py-2 px-4 rounded-lg hover:bg-gray-100 cursor-pointer">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Todos</span>
-            </div>
-            <span className="text-sm text-gray-500">
-              {activeProjects.length + completedProjects.length}
-            </span>
-          </div>
-          {["PC", "Calibrador", "Placa", "Outros"].map((type) => (
-            <div
-              key={type}
-              className="flex items-center justify-between py-2 px-4 rounded-lg hover:bg-gray-100 cursor-pointer"
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">{type}</span>
+          {categories.map((type) => {
+            // 2) If it's "Todos", show total count; otherwise, filter by type
+            const count =
+              type === "Todos"
+                ? activeProjects.length + completedProjects.length
+                : activeProjects.filter((p) => p.type === type).length +
+                  completedProjects.filter((p) => p.type === type).length;
+
+            return (
+              <div
+                key={type}
+                className="
+                  flex items-center justify-between
+                  py-2 px-4
+                  rounded-lg
+                  hover:bg-gray-100
+                  dark:hover:bg-gray-700
+                  cursor-pointer
+                  transition-colors
+                "
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">{type}</span>
+                </div>
+                <span className="text-sm text-gray-500">
+                  {count}
+                </span>
               </div>
-              <span className="text-sm text-gray-500">
-                {activeProjects.filter((p) => p.type === type).length +
-                  completedProjects.filter((p) => p.type === type).length}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Main content */}
@@ -129,7 +138,12 @@ const ProjectsPage = () => {
                   {activeProjects.map((project) => (
                     <div
                       key={project.id}
-                      className="p-6 bg-white rounded-lg border hover:shadow-lg transition-all"
+                      className="
+                        p-6
+                        bg-white dark:bg-gray-800
+                        text-gray-900 dark:text-gray-100
+                        rounded-lg border hover:shadow-lg transition-all
+                      "
                     >
                       <div className="flex justify-between items-start">
                         <div>
@@ -143,8 +157,8 @@ const ProjectsPage = () => {
                                 project.priority === "Alta"
                                   ? "bg-red-100 text-red-800"
                                   : project.priority === "Média"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : "bg-green-100 text-green-800",
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-green-100 text-green-800",
                               )}
                             >
                               {project.priority}
@@ -175,7 +189,7 @@ const ProjectsPage = () => {
                                 setEditingProject(project.id);
                               }
                             }}
-                            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                           >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -194,7 +208,7 @@ const ProjectsPage = () => {
                           </button>
                           <button
                             onClick={() => handleProjectComplete(project.id)}
-                            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                           >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -228,7 +242,12 @@ const ProjectsPage = () => {
                     completedProjects.map((project) => (
                       <div
                         key={project.id}
-                        className="p-6 bg-white rounded-lg border"
+                        className="
+                          p-6
+                          bg-white dark:bg-gray-800
+                          text-gray-900 dark:text-gray-100
+                          rounded-lg border transition-all
+                        "
                       >
                         <div className="flex justify-between items-start">
                           <div>
@@ -270,6 +289,7 @@ const ProjectsPage = () => {
           </div>
         </div>
       </div>
+
       <NewProjectDialog
         key={`project-dialog-${editingProject || "new"}`}
         projectId={editingProject}

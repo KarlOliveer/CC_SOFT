@@ -152,7 +152,7 @@ const NewUserDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {editingUser ? "Editar Usuário" : "Criar Novo Usuário"}
