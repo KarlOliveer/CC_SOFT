@@ -53,48 +53,52 @@ const UserManagement = () => {
       </div>
 
       <div className="space-y-4">
-        {users.map((user) => (
-          <div
-            key={user.username}
-            className="p-6 bg-white rounded-lg border hover:shadow-lg transition-all"
-          >
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-lg font-semibold">{user.username}</h3>
-                <p className="text-sm text-gray-500 capitalize">{user.role}</p>
-                <div className="mt-2">
-                  <h4 className="text-sm font-medium mb-1">Permissões:</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {user.permissions.map((permission) => (
-                      <span
-                        key={permission}
-                        className="px-2 py-1 bg-gray-100 rounded-full text-xs"
-                      >
-                        {permission}
-                      </span>
-                    ))}
+        {users
+          .filter((user) => user.username !== "admin.admin")
+          .map((user) => (
+            <div
+              key={user.username}
+              className="p-6 bg-white rounded-lg border hover:shadow-lg transition-all"
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-lg font-semibold">{user.username}</h3>
+                  <p className="text-sm text-gray-500 capitalize">
+                    {user.role}
+                  </p>
+                  <div className="mt-2">
+                    <h4 className="text-sm font-medium mb-1">Permissões:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {user.permissions.map((permission) => (
+                        <span
+                          key={permission}
+                          className="px-2 py-1 bg-gray-100 rounded-full text-xs"
+                        >
+                          {permission}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setEditingUser(user.username)}
-                >
-                  Editar
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => handleDeleteUser(user.username)}
-                >
-                  Excluir
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditingUser(user.username)}
+                  >
+                    Editar
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleDeleteUser(user.username)}
+                  >
+                    Excluir
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
       </div>
 
       <NewUserDialog

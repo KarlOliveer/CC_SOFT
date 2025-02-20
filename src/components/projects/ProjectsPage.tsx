@@ -24,7 +24,15 @@ interface Project {
 }
 
 const ProjectsPage = () => {
-  const [editingProject, setEditingProject] = React.useState<string | null>(null);
+  const [editingProject, setEditingProject] = React.useState<string | null>(
+    null,
+  );
+  const username = localStorage.getItem("user");
+  const users = JSON.parse(localStorage.getItem("users") || "[]");
+  const currentUser = users.find((u: any) => u.username === username);
+  const canEditProjects = currentUser?.permissions?.includes("projetos_edit");
+  const canCreateProjects =
+    currentUser?.permissions?.includes("projetos_create");
 
   const [activeProjects, setActiveProjects] = React.useState<Project[]>([
     {
@@ -49,7 +57,9 @@ const ProjectsPage = () => {
     },
   ]);
 
-  const [completedProjects, setCompletedProjects] = React.useState<Project[]>([]);
+  const [completedProjects, setCompletedProjects] = React.useState<Project[]>(
+    [],
+  );
 
   const handleProjectComplete = (projectId: string) => {
     const project = activeProjects.find((p) => p.id === projectId);
@@ -79,13 +89,15 @@ const ProjectsPage = () => {
           <h1 className="text-2xl font-bold">Projetos</h1>
           <p className="text-gray-500">Gerencie seus projetos técnicos</p>
         </div>
-        <Button
-          className="bg-black text-white hover:bg-gray-800"
-          onClick={() => setEditingProject("new")}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Projeto
-        </Button>
+        {canCreateProjects && (
+          <Button
+            className="bg-black text-white hover:bg-gray-800"
+            onClick={() => setEditingProject("new")}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Projeto
+          </Button>
+        )}
       </div>
 
       <div className="flex gap-8">
@@ -115,9 +127,7 @@ const ProjectsPage = () => {
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">{type}</span>
                 </div>
-                <span className="text-sm text-gray-500">
-                  {count}
-                </span>
+                <span className="text-sm text-gray-500">{count}</span>
               </div>
             );
           })}
@@ -157,8 +167,8 @@ const ProjectsPage = () => {
                                 project.priority === "Alta"
                                   ? "bg-red-100 text-red-800"
                                   : project.priority === "Média"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : "bg-green-100 text-green-800",
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : "bg-green-100 text-green-800",
                               )}
                             >
                               {project.priority}
@@ -180,51 +190,57 @@ const ProjectsPage = () => {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => {
-                              const projectToEdit = activeProjects.find(
-                                (p) => p.id === project.id,
-                              );
-                              if (projectToEdit) {
-                                setEditingProject(project.id);
-                              }
-                            }}
-                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                              <path d="m15 5 4 4" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleProjectComplete(project.id)}
-                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
-                              <path d="m9 12 2 2 4-4" />
-                            </svg>
-                          </button>
+                          {canEditProjects && (
+                            <>
+                              <button
+                                onClick={() => {
+                                  const projectToEdit = activeProjects.find(
+                                    (p) => p.id === project.id,
+                                  );
+                                  if (projectToEdit) {
+                                    setEditingProject(project.id);
+                                  }
+                                }}
+                                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="16"
+                                  height="16"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                                  <path d="m15 5 4 4" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleProjectComplete(project.id)
+                                }
+                                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="16"
+                                  height="16"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
+                                  <path d="m9 12 2 2 4-4" />
+                                </svg>
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>

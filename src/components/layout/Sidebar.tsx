@@ -67,7 +67,33 @@ const Sidebar = () => {
       {/* Navegação */}
       <nav className="flex-1">
         {navItems
-          .filter((item) => !item.adminOnly || isAdmin)
+          .filter((item) => {
+            if (item.adminOnly && !isAdmin) return false;
+
+            const users = JSON.parse(localStorage.getItem("users") || "[]");
+            const currentUser = users.find((u: any) => u.username === username);
+
+            // Map routes to required permissions
+            const routePermissions: Record<string, string> = {
+              "/projetos": "projetos_view",
+              "/materiais": "materiais_view",
+              "/testes": "testes_view",
+              "/pedidos": "pedidos_view",
+              "/entregas": "entregas_view",
+              "/checklists": "checklists_view",
+              "/usuarios": "usuarios_view",
+            };
+
+            // If user is admin, show all items
+            if (isAdmin) return true;
+
+            const requiredPermission = routePermissions[item.href];
+            if (requiredPermission) {
+              return currentUser?.permissions?.includes(requiredPermission);
+            }
+
+            return true;
+          })
           .map((item) => {
             const isActive = location.pathname === item.href;
             return (
@@ -78,7 +104,7 @@ const Sidebar = () => {
                   "flex items-center gap-3 px-6 py-3 text-sm font-medium transition-colors",
                   isActive
                     ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
-                    : "text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
+                    : "text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400",
                 )}
               >
                 <item.icon className="h-5 w-5" />
