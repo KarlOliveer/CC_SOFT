@@ -3,11 +3,23 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { User, Permission } from "@/types/auth";
 import NewUserDialog from "./NewUserDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const UserManagement = () => {
   const [users, setUsers] = React.useState<User[]>([]);
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingUser, setEditingUser] = React.useState<string | null>(null);
+  const [userToDelete, setUserToDelete] = React.useState<string | null>(null);
+  const currentUsername = localStorage.getItem("user");
 
   const handleCreateUser = (userData: User) => {
     setUsers([...users, userData]);
@@ -24,9 +36,21 @@ const UserManagement = () => {
   };
 
   const handleDeleteUser = (username: string) => {
-    const updatedUsers = users.filter((user) => user.username !== username);
-    setUsers(updatedUsers);
-    localStorage.setItem("users", JSON.stringify(updatedUsers));
+    if (username === currentUsername) {
+      return; // Não permite excluir o próprio usuário
+    }
+    setUserToDelete(username);
+  };
+
+  const confirmDelete = () => {
+    if (userToDelete) {
+      const updatedUsers = users.filter(
+        (user) => user.username !== userToDelete,
+      );
+      setUsers(updatedUsers);
+      localStorage.setItem("users", JSON.stringify(updatedUsers));
+      setUserToDelete(null);
+    }
   };
 
   React.useEffect(() => {
@@ -92,6 +116,12 @@ const UserManagement = () => {
                     variant="destructive"
                     size="sm"
                     onClick={() => handleDeleteUser(user.username)}
+                    disabled={user.username === currentUsername}
+                    title={
+                      user.username === currentUsername
+                        ? "Você não pode excluir seu próprio usuário"
+                        : ""
+                    }
                   >
                     Excluir
                   </Button>
@@ -100,6 +130,27 @@ const UserManagement = () => {
             </div>
           ))}
       </div>
+
+      <AlertDialog
+        open={!!userToDelete}
+        onOpenChange={() => setUserToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este usuário? Esta ação não pode
+              ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <NewUserDialog
         open={isDialogOpen || !!editingUser}

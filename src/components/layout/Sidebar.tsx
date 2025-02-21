@@ -25,7 +25,7 @@ const navItems = [
   { label: "Pedidos", icon: MessageSquare, href: "/pedidos" },
   { label: "Entregas", icon: Truck, href: "/entregas" },
   { label: "Checklists", icon: ClipboardCheck, href: "/checklists" },
-  { label: "Usuários", icon: Users, href: "/usuarios", adminOnly: true },
+  { label: "Usuários", icon: Users, href: "/usuarios" },
 ];
 
 const Sidebar = () => {
@@ -68,28 +68,32 @@ const Sidebar = () => {
       <nav className="flex-1">
         {navItems
           .filter((item) => {
-            if (item.adminOnly && !isAdmin) return false;
-
             const users = JSON.parse(localStorage.getItem("users") || "[]");
             const currentUser = users.find((u: any) => u.username === username);
 
             // Map routes to required permissions
-            const routePermissions: Record<string, string> = {
-              "/projetos": "projetos_view",
-              "/materiais": "materiais_view",
-              "/testes": "testes_view",
-              "/pedidos": "pedidos_view",
-              "/entregas": "entregas_view",
-              "/checklists": "checklists_view",
-              "/usuarios": "usuarios_view",
+            const routePermissions: Record<string, string[]> = {
+              "/projetos": ["projetos_view"],
+              "/materiais": ["materiais_view"],
+              "/testes": ["testes_view"],
+              "/pedidos": ["pedidos_view"],
+              "/entregas": ["entregas_view"],
+              "/checklists": ["checklists_view"],
+              "/usuarios": [
+                "usuarios_view",
+                "usuarios_edit",
+                "usuarios_create",
+              ],
             };
 
             // If user is admin, show all items
             if (isAdmin) return true;
 
-            const requiredPermission = routePermissions[item.href];
-            if (requiredPermission) {
-              return currentUser?.permissions?.includes(requiredPermission);
+            const requiredPermissions = routePermissions[item.href];
+            if (requiredPermissions) {
+              return requiredPermissions.some((permission) =>
+                currentUser?.permissions?.includes(permission),
+              );
             }
 
             return true;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ import {
 
 import logo from "@/assets/mcm_logo.png";
 
-export default function LoginForm() {
+const LoginForm = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     username: "",
@@ -150,4 +150,6 @@ export default function LoginForm() {
       </Dialog>
     </div>
   );
-}
+};
+
+export default LoginForm;
