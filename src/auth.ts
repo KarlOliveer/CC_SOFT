@@ -1,6 +1,3 @@
-import dotenv from 'dotenv';
-dotenv.config();
-
 async function getAuthToken(): Promise<string> {
     const token = process.env.CODEIUM_TOKEN;
     if (!token) {
