@@ -1,14 +1,25 @@
 import { Suspense } from "react";
-import { useRoutes, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { useRoutes } from "react-router-dom"; // For tempo-routes
 import Home from "./components/home";
 import ProjectsPage from "./components/projects/ProjectsPage";
+import MaterialsPage from "./components/materials/MaterialPage";
 import Layout from "./components/layout/Layout";
 import LoginForm from "./components/auth/LoginForm";
 import PrivateRoute from "./components/auth/PrivateRoute";
 import UserManagement from "./components/users/UserManagement";
 import routes from "tempo-routes";
+import RequestsPage from "./components/requests/RequestsPage";
 
 function App() {
+  const location = useLocation();
+
+  // Check if the user has an active session
+  const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
+
+  // Redirect to /login if not authenticated and not already on /login
+  const shouldRedirectToLogin = !isAuthenticated && location.pathname !== "/login";
+
   return (
     <Suspense fallback={<p>Loading...</p>}>
       <Routes>
@@ -17,11 +28,15 @@ function App() {
         <Route
           path="/"
           element={
-            <PrivateRoute>
-              <Layout>
-                <Home />
-              </Layout>
-            </PrivateRoute>
+            shouldRedirectToLogin ? (
+              <Navigate to="/login" replace />
+            ) : (
+              <PrivateRoute>
+                <Layout>
+                  <Home />
+                </Layout>
+              </PrivateRoute>
+            )
           }
         />
 
@@ -41,7 +56,7 @@ function App() {
           element={
             <PrivateRoute>
               <Layout>
-                <Home />
+                <MaterialsPage />
               </Layout>
             </PrivateRoute>
           }
@@ -63,7 +78,7 @@ function App() {
           element={
             <PrivateRoute>
               <Layout>
-                <Home />
+                <RequestsPage />
               </Layout>
             </PrivateRoute>
           }
@@ -104,7 +119,17 @@ function App() {
 
         {import.meta.env.VITE_TEMPO === "true" && <Route path="/tempobook/*" />}
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Catch-all route */}
+        <Route
+          path="*"
+          element={
+            shouldRedirectToLogin ? (
+              <Navigate to="/login" replace />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
       </Routes>
       {import.meta.env.VITE_TEMPO === "true" && useRoutes(routes)}
     </Suspense>

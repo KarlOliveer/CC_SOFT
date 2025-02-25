@@ -10,6 +10,11 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+<<<<<<< HEAD
+=======
+
+import logo from "@/assets/mcm_logo.png";
+>>>>>>> 22764d5 (Atualização do projeto - ajustes e novos arquivos)
 
 import logo from "@/assets/mcm_logo.png";
 
@@ -24,6 +29,7 @@ const LoginForm = () => {
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+<<<<<<< HEAD
   useEffect(() => {
     // Ensure admin user exists
     const users = JSON.parse(localStorage.getItem("users") || "[]");
@@ -54,14 +60,13 @@ const LoginForm = () => {
     }
   }, []);
 
+=======
+>>>>>>> 22764d5 (Atualização do projeto - ajustes e novos arquivos)
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     // Check admin credentials
-    if (
-      formData.username === "admin.admin" &&
-      formData.password === "admingenerico"
-    ) {
+    if (formData.username === "admin.admin" && formData.password === "admin") {
       localStorage.setItem("isAuthenticated", "true");
       localStorage.setItem("user", formData.username);
       navigate("/");
@@ -74,9 +79,13 @@ const LoginForm = () => {
 
     // If user not found
     if (!user) {
+<<<<<<< HEAD
       setErrorMessage(
         `O usuário "${formData.username}" não existe no sistema.`,
       );
+=======
+      setErrorMessage(`O usuário "${formData.username}" não existe no sistema.`);
+>>>>>>> 22764d5 (Atualização do projeto - ajustes e novos arquivos)
       setErrorDialogOpen(true);
       return;
     }
@@ -139,10 +148,14 @@ const LoginForm = () => {
           </DialogHeader>
           <p>{errorMessage}</p>
           <DialogFooter>
+<<<<<<< HEAD
             <Button
               variant="secondary"
               onClick={() => setErrorDialogOpen(false)}
             >
+=======
+            <Button variant="secondary" onClick={() => setErrorDialogOpen(false)}>
+>>>>>>> 22764d5 (Atualização do projeto - ajustes e novos arquivos)
               Fechar
             </Button>
           </DialogFooter>

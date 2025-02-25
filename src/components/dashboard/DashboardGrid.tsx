@@ -29,7 +29,7 @@ const DashboardGrid = ({
           />
           <StatsCard
             icon={<Package className="h-6 w-6" />}
-            title="Itens com Baixo Estoque"
+            title="Itens com Stock Baixo"
             value={3}
           />
           <StatsCard

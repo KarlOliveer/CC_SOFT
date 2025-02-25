@@ -1,3 +1,5 @@
+"use client"; // Ensure this is a client component since it uses hooks
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -22,14 +24,14 @@ const UserManagement = () => {
   const currentUsername = localStorage.getItem("user");
 
   const handleCreateUser = (userData: User) => {
-    setUsers([...users, userData]);
-    // In a real app, you would make an API call here
-    localStorage.setItem("users", JSON.stringify([...users, userData]));
+    const updatedUsers = [...users, userData];
+    setUsers(updatedUsers);
+    localStorage.setItem("users", JSON.stringify(updatedUsers));
   };
 
   const handleEditUser = (username: string, updatedData: Partial<User>) => {
     const updatedUsers = users.map((user) =>
-      user.username === username ? { ...user, ...updatedData } : user,
+      user.username === username ? { ...user, ...updatedData } : user
     );
     setUsers(updatedUsers);
     localStorage.setItem("users", JSON.stringify(updatedUsers));
@@ -45,7 +47,11 @@ const UserManagement = () => {
   const confirmDelete = () => {
     if (userToDelete) {
       const updatedUsers = users.filter(
+<<<<<<< HEAD
         (user) => user.username !== userToDelete,
+=======
+        (user) => user.username !== userToDelete
+>>>>>>> 22764d5 (Atualização do projeto - ajustes e novos arquivos)
       );
       setUsers(updatedUsers);
       localStorage.setItem("users", JSON.stringify(updatedUsers));
@@ -56,7 +62,11 @@ const UserManagement = () => {
   React.useEffect(() => {
     const storedUsers = localStorage.getItem("users");
     if (storedUsers) {
-      setUsers(JSON.parse(storedUsers));
+      try {
+        setUsers(JSON.parse(storedUsers));
+      } catch (error) {
+        console.error("Error parsing stored users:", error);
+      }
     }
   }, []);
 
@@ -65,10 +75,12 @@ const UserManagement = () => {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">Gerenciamento de Usuários</h1>
-          <p className="text-gray-500">Gerencie usuários e suas permissões</p>
+          <p className="text-gray-500 dark:text-gray-400">
+            Gerencie usuários e suas permissões
+          </p>
         </div>
         <Button
-          className="bg-black text-white hover:bg-gray-800"
+          className="bg-black text-white hover:bg-gray-800 dark:bg-gray-900 dark:hover:bg-gray-700"
           onClick={() => setIsDialogOpen(true)}
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -82,6 +94,7 @@ const UserManagement = () => {
           .map((user) => (
             <div
               key={user.username}
+<<<<<<< HEAD
               className="p-6 bg-white rounded-lg border hover:shadow-lg transition-all"
             >
               <div className="flex justify-between items-start">
@@ -92,11 +105,31 @@ const UserManagement = () => {
                   </p>
                   <div className="mt-2">
                     <h4 className="text-sm font-medium mb-1">Permissões:</h4>
+=======
+              className="p-6 bg-white dark:bg-gray-800 rounded-lg border hover:shadow-lg transition-all"
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    {user.username}
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">
+                    {user.role}
+                  </p>
+                  <div className="mt-2">
+                    <h4 className="text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+                      Permissões:
+                    </h4>
+>>>>>>> 22764d5 (Atualização do projeto - ajustes e novos arquivos)
                     <div className="flex flex-wrap gap-2">
                       {user.permissions.map((permission) => (
                         <span
                           key={permission}
+<<<<<<< HEAD
                           className="px-2 py-1 bg-gray-100 rounded-full text-xs"
+=======
+                          className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-xs text-gray-800 dark:text-gray-200"
+>>>>>>> 22764d5 (Atualização do projeto - ajustes e novos arquivos)
                         >
                           {permission}
                         </span>
