@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   Dialog,
@@ -50,13 +51,12 @@ const NewProjectDialog = ({
   projectId = null,
   project = null,
 }: NewProjectDialogProps) => {
-  const isEditing = !!projectId;
-  const [open, setOpen] = React.useState(isEditing);
+  const isEditing = Boolean(project);
+  const [open, setOpen] = React.useState(projectId === "new" || isEditing);
 
   React.useEffect(() => {
-    setOpen(isEditing);
-  }, [isEditing]);
-
+    setOpen(projectId === "new" || Boolean(project));
+  }, [projectId, project]);
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
     if (!newOpen && !isEditing) {
@@ -357,7 +357,7 @@ const NewProjectDialog = ({
             className="w-full bg-black text-white hover:bg-gray-800 mt-6"
             onClick={handleSubmit}
           >
-            {isEditing ? "Salvar Alterações" : "Criar Projeto"}
+            {isEditing ? "Guardar Alterações" : "Criar Projeto"}
           </Button>
         </Tabs>
       </DialogContent>

@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { useRoutes, Routes, Route, Navigate } from "react-router-dom";
 import Home from "./components/home";
 import ProjectsPage from "./components/projects/ProjectsPage";
+import MaterialsPage from "./components/materials/MaterialPage";
 import Layout from "./components/layout/Layout";
 import LoginForm from "./components/auth/LoginForm";
 import PrivateRoute from "./components/auth/PrivateRoute";
@@ -41,7 +42,7 @@ function App() {
           element={
             <PrivateRoute>
               <Layout>
-                <Home />
+                <MaterialsPage />
               </Layout>
             </PrivateRoute>
           }
