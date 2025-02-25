@@ -26,6 +26,7 @@ type BoardType =
 
 interface Board {
   type: BoardType;
+  version: string;
   quantity: string;
   codes: string[];
 }
@@ -66,7 +67,7 @@ const BoardsForm = ({
   const addBoard = () => {
     const newBoards = [
       ...boards,
-      { type: BOARD_TYPES[0], quantity: "1", codes: [] },
+      { type: BOARD_TYPES[0], version: "", quantity: "1", codes: [] },
     ];
     setBoards(newBoards);
     onChange(newBoards);
@@ -132,7 +133,7 @@ const BoardsForm = ({
       {boards.map((board, boardIndex) => (
         <div key={boardIndex} className="space-y-4 p-4 border rounded-lg">
           <div className="flex items-center gap-2">
-            <div className="flex-1">
+            <div className="flex-1 grid grid-cols-2 gap-2">
               <Select
                 value={board.type}
                 onValueChange={(value) =>
@@ -150,6 +151,13 @@ const BoardsForm = ({
                   ))}
                 </SelectContent>
               </Select>
+              <Input
+                placeholder="Versão"
+                value={board.version}
+                onChange={(e) =>
+                  updateBoard(boardIndex, "version", e.target.value)
+                }
+              />
             </div>
             <div className="w-24">
               <Input
