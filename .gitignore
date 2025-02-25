@@ -29,5 +29,8 @@ dist-ssr
 **/tempobook/storyboards/
 
 core
+<<<<<<< HEAD
 
 .env
+=======
+>>>>>>> 49493c5 (Primeiro commit)

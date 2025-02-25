@@ -12,7 +12,11 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
+<<<<<<< HEAD
     "jsx": "react",
+=======
+    "jsx": "react-jsx",
+>>>>>>> 49493c5 (Primeiro commit)
 
     "strict": false,
     "paths": {

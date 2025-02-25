@@ -11,10 +11,13 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 import logo from "@/assets/mcm_logo.png";
 >>>>>>> 22764d5 (Atualização do projeto - ajustes e novos arquivos)
+=======
+>>>>>>> 49493c5 (Primeiro commit)
 
 import logo from "@/assets/mcm_logo.png";
 
@@ -30,6 +33,9 @@ const LoginForm = () => {
   const [errorMessage, setErrorMessage] = useState("");
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 49493c5 (Primeiro commit)
   useEffect(() => {
     // Ensure admin user exists
     const users = JSON.parse(localStorage.getItem("users") || "[]");
@@ -60,13 +66,23 @@ const LoginForm = () => {
     }
   }, []);
 
+<<<<<<< HEAD
 =======
 >>>>>>> 22764d5 (Atualização do projeto - ajustes e novos arquivos)
+=======
+>>>>>>> 49493c5 (Primeiro commit)
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     // Check admin credentials
+<<<<<<< HEAD
     if (formData.username === "admin.admin" && formData.password === "admin") {
+=======
+    if (
+      formData.username === "admin.admin" &&
+      formData.password === "admingenerico"
+    ) {
+>>>>>>> 49493c5 (Primeiro commit)
       localStorage.setItem("isAuthenticated", "true");
       localStorage.setItem("user", formData.username);
       navigate("/");
@@ -80,12 +96,18 @@ const LoginForm = () => {
     // If user not found
     if (!user) {
 <<<<<<< HEAD
+<<<<<<< HEAD
       setErrorMessage(
         `O usuário "${formData.username}" não existe no sistema.`,
       );
 =======
       setErrorMessage(`O usuário "${formData.username}" não existe no sistema.`);
 >>>>>>> 22764d5 (Atualização do projeto - ajustes e novos arquivos)
+=======
+      setErrorMessage(
+        `O usuário "${formData.username}" não existe no sistema.`,
+      );
+>>>>>>> 49493c5 (Primeiro commit)
       setErrorDialogOpen(true);
       return;
     }
@@ -149,13 +171,19 @@ const LoginForm = () => {
           <p>{errorMessage}</p>
           <DialogFooter>
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 49493c5 (Primeiro commit)
             <Button
               variant="secondary"
               onClick={() => setErrorDialogOpen(false)}
             >
+<<<<<<< HEAD
 =======
             <Button variant="secondary" onClick={() => setErrorDialogOpen(false)}>
 >>>>>>> 22764d5 (Atualização do projeto - ajustes e novos arquivos)
+=======
+>>>>>>> 49493c5 (Primeiro commit)
               Fechar
             </Button>
           </DialogFooter>

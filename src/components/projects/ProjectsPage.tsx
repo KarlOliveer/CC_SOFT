@@ -1,6 +1,9 @@
+<<<<<<< HEAD
 // src/components/ProjectsPage.tsx
 "use client";
 
+=======
+>>>>>>> 49493c5 (Primeiro commit)
 import React from "react";
 import NewProjectDialog from "./NewProjectDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,11 +11,33 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { downloadProjectReport } from "./DownloadReport";
+<<<<<<< HEAD
 import { ProjectReport } from "./ProjectReport"; // Import the new ProjectReport component
 import type { Project } from "@/types/types"; // Import the updated Project type
 
 const ProjectsPage = () => {
 <<<<<<< HEAD
+=======
+
+interface Project {
+  id: string;
+  title: string;
+  type: string;
+  dueDate: string;
+  serviceType: string;
+  description: string;
+  priority: "Alta" | "Média" | "Baixa";
+  status: "Pendente" | "Em Andamento" | "Concluído";
+  hardwareSpecs?: any;
+  boards?: any[];
+  repairDetails?: {
+    description: string;
+    replacedComponents: Array<{ name: string; quantity: string }>;
+  };
+}
+
+const ProjectsPage = () => {
+>>>>>>> 49493c5 (Primeiro commit)
   const [editingProject, setEditingProject] = React.useState<string | null>(
     null,
   );
@@ -49,6 +74,7 @@ const ProjectsPage = () => {
   const [completedProjects, setCompletedProjects] = React.useState<Project[]>(
     [],
   );
+<<<<<<< HEAD
 =======
   const [editingProject, setEditingProject] = React.useState<string | null>(null);
   const [activeProjects, setActiveProjects] = React.useState<Project[]>([]);
@@ -167,6 +193,30 @@ const ProjectsPage = () => {
   }
 
 >>>>>>> 22764d5 (Atualização do projeto - ajustes e novos arquivos)
+=======
+
+  const handleProjectComplete = (projectId: string) => {
+    const project = activeProjects.find((p) => p.id === projectId);
+    if (project) {
+      const updatedProject = { ...project, status: "Concluído" };
+      setCompletedProjects([...completedProjects, updatedProject]);
+      setActiveProjects(activeProjects.filter((p) => p.id !== projectId));
+    }
+  };
+
+  const handleNewProject = (data: any) => {
+    const newProject = {
+      id: Math.random().toString(36).substr(2, 9),
+      ...data,
+      status: "Pendente",
+    };
+    setActiveProjects([...activeProjects, newProject]);
+  };
+
+  // 1) Put "Todos" and other categories in a single array
+  const categories = ["Todos", "PC", "Calibrador", "Placa", "Outros"];
+
+>>>>>>> 49493c5 (Primeiro commit)
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-6">
@@ -186,9 +236,14 @@ const ProjectsPage = () => {
       </div>
 
       <div className="flex gap-8">
+<<<<<<< HEAD
         {/* Sidebar */}
         <div className="w-64 space-y-1">
 <<<<<<< HEAD
+=======
+        {/* Left sidebar */}
+        <div className="w-64 space-y-1">
+>>>>>>> 49493c5 (Primeiro commit)
           {categories.map((type) => {
             // 2) If it's "Todos", show total count; otherwise, filter by type
             const count =
@@ -217,6 +272,7 @@ const ProjectsPage = () => {
               </div>
             );
           })}
+<<<<<<< HEAD
 =======
           {categories.map((type) => (
             <div
@@ -236,10 +292,13 @@ const ProjectsPage = () => {
             </div>
           ))}
 >>>>>>> 22764d5 (Atualização do projeto - ajustes e novos arquivos)
+=======
+>>>>>>> 49493c5 (Primeiro commit)
         </div>
 
         {/* Main content */}
         <div className="flex-1">
+<<<<<<< HEAD
           <h2 className="text-xl font-semibold mb-2">Todos os Projetos</h2>
           <Tabs defaultValue="em-andamento" className="w-full">
             <TabsList>
@@ -337,6 +396,19 @@ const ProjectsPage = () => {
                   </div>
                 ) : (
                   completedProjects.map((project) => (
+=======
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold mb-2">Todos os Projetos</h2>
+            <Tabs defaultValue="em-andamento" className="w-full">
+              <TabsList>
+                <TabsTrigger value="em-andamento">Em Andamento</TabsTrigger>
+                <TabsTrigger value="concluidos">Concluídos</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="em-andamento" className="mt-4">
+                <div className="space-y-4">
+                  {activeProjects.map((project) => (
+>>>>>>> 49493c5 (Primeiro commit)
                     <div
                       key={project.id}
                       className="
@@ -344,15 +416,20 @@ const ProjectsPage = () => {
                         bg-white dark:bg-gray-800
                         text-gray-900 dark:text-gray-100
 <<<<<<< HEAD
+<<<<<<< HEAD
                         rounded-lg border hover:shadow-lg transition-all
 =======
                         rounded-lg border transition-all
 >>>>>>> 22764d5 (Atualização do projeto - ajustes e novos arquivos)
+=======
+                        rounded-lg border hover:shadow-lg transition-all
+>>>>>>> 49493c5 (Primeiro commit)
                       "
                     >
                       <div className="flex justify-between items-start">
                         <div>
                           <div className="flex items-center gap-2 mb-2">
+<<<<<<< HEAD
                             <h3 className="text-lg font-semibold">{project.title}</h3>
                           </div>
                           <div className="text-sm text-gray-500 mb-4">{project.type}</div>
@@ -363,6 +440,39 @@ const ProjectsPage = () => {
                           </div>
                         </div>
 <<<<<<< HEAD
+=======
+                            <h3 className="text-lg font-semibold">
+                              {project.title}
+                            </h3>
+                            <div
+                              className={cn(
+                                "px-2 py-1 rounded-full text-xs font-medium",
+                                project.priority === "Alta"
+                                  ? "bg-red-100 text-red-800"
+                                  : project.priority === "Média"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : "bg-green-100 text-green-800",
+                              )}
+                            >
+                              {project.priority}
+                            </div>
+                          </div>
+                          <div className="text-sm text-gray-500 mb-4">
+                            {project.type}
+                          </div>
+                          <div className="space-y-2">
+                            <div className="text-sm">
+                              Data Limite: {project.dueDate}
+                            </div>
+                            <div className="text-sm">
+                              Tipo de Serviço: {project.serviceType}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {project.description}
+                            </div>
+                          </div>
+                        </div>
+>>>>>>> 49493c5 (Primeiro commit)
                         <div className="flex items-center gap-2">
                           {canEditProjects && (
                             <>
@@ -477,6 +587,7 @@ const ProjectsPage = () => {
               </TabsContent>
             </Tabs>
           </div>
+<<<<<<< HEAD
 =======
                         <div className="flex flex-col items-end gap-2">
                           <Button
@@ -502,6 +613,8 @@ const ProjectsPage = () => {
             </TabsContent>
           </Tabs>
 >>>>>>> 22764d5 (Atualização do projeto - ajustes e novos arquivos)
+=======
+>>>>>>> 49493c5 (Primeiro commit)
         </div>
       </div>
 
@@ -509,6 +622,7 @@ const ProjectsPage = () => {
         key={`project-dialog-${editingProject || "new"}`}
         projectId={editingProject}
         project={
+<<<<<<< HEAD
           editingProject && editingProject !== "new"
             ? activeProjects.find((p) => p.id === editingProject) || null
             : null
@@ -529,8 +643,31 @@ const ProjectsPage = () => {
           onOpenChange={(open) => setReportOpen(open ? reportOpen : null)}
         />
       )}
+=======
+          editingProject
+            ? activeProjects.find((p) => p.id === editingProject)
+            : null
+        }
+        onSubmit={(data) => {
+          if (editingProject) {
+            setActiveProjects(
+              activeProjects.map((p) =>
+                p.id === editingProject ? { ...p, ...data } : p,
+              ),
+            );
+          } else {
+            handleNewProject(data);
+          }
+          setEditingProject(null);
+        }}
+      />
+>>>>>>> 49493c5 (Primeiro commit)
     </div>
   );
 };
 
+<<<<<<< HEAD
 export default ProjectsPage;
+=======
+export default ProjectsPage;
+>>>>>>> 49493c5 (Primeiro commit)

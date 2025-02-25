@@ -29,7 +29,11 @@ const DashboardGrid = ({
           />
           <StatsCard
             icon={<Package className="h-6 w-6" />}
+<<<<<<< HEAD
             title="Itens com Stock Baixo"
+=======
+            title="Itens com Baixo Estoque"
+>>>>>>> 49493c5 (Primeiro commit)
             value={3}
           />
           <StatsCard

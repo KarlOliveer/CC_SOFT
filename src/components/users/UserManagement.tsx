@@ -1,5 +1,8 @@
+<<<<<<< HEAD
 "use client"; // Ensure this is a client component since it uses hooks
 
+=======
+>>>>>>> 49493c5 (Primeiro commit)
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -24,14 +27,24 @@ const UserManagement = () => {
   const currentUsername = localStorage.getItem("user");
 
   const handleCreateUser = (userData: User) => {
+<<<<<<< HEAD
     const updatedUsers = [...users, userData];
     setUsers(updatedUsers);
     localStorage.setItem("users", JSON.stringify(updatedUsers));
+=======
+    setUsers([...users, userData]);
+    // In a real app, you would make an API call here
+    localStorage.setItem("users", JSON.stringify([...users, userData]));
+>>>>>>> 49493c5 (Primeiro commit)
   };
 
   const handleEditUser = (username: string, updatedData: Partial<User>) => {
     const updatedUsers = users.map((user) =>
+<<<<<<< HEAD
       user.username === username ? { ...user, ...updatedData } : user
+=======
+      user.username === username ? { ...user, ...updatedData } : user,
+>>>>>>> 49493c5 (Primeiro commit)
     );
     setUsers(updatedUsers);
     localStorage.setItem("users", JSON.stringify(updatedUsers));
@@ -48,10 +61,14 @@ const UserManagement = () => {
     if (userToDelete) {
       const updatedUsers = users.filter(
 <<<<<<< HEAD
+<<<<<<< HEAD
         (user) => user.username !== userToDelete,
 =======
         (user) => user.username !== userToDelete
 >>>>>>> 22764d5 (Atualização do projeto - ajustes e novos arquivos)
+=======
+        (user) => user.username !== userToDelete,
+>>>>>>> 49493c5 (Primeiro commit)
       );
       setUsers(updatedUsers);
       localStorage.setItem("users", JSON.stringify(updatedUsers));
@@ -62,11 +79,15 @@ const UserManagement = () => {
   React.useEffect(() => {
     const storedUsers = localStorage.getItem("users");
     if (storedUsers) {
+<<<<<<< HEAD
       try {
         setUsers(JSON.parse(storedUsers));
       } catch (error) {
         console.error("Error parsing stored users:", error);
       }
+=======
+      setUsers(JSON.parse(storedUsers));
+>>>>>>> 49493c5 (Primeiro commit)
     }
   }, []);
 
@@ -75,12 +96,19 @@ const UserManagement = () => {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">Gerenciamento de Usuários</h1>
+<<<<<<< HEAD
           <p className="text-gray-500 dark:text-gray-400">
             Gerencie usuários e suas permissões
           </p>
         </div>
         <Button
           className="bg-black text-white hover:bg-gray-800 dark:bg-gray-900 dark:hover:bg-gray-700"
+=======
+          <p className="text-gray-500">Gerencie usuários e suas permissões</p>
+        </div>
+        <Button
+          className="bg-black text-white hover:bg-gray-800"
+>>>>>>> 49493c5 (Primeiro commit)
           onClick={() => setIsDialogOpen(true)}
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -95,6 +123,9 @@ const UserManagement = () => {
             <div
               key={user.username}
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 49493c5 (Primeiro commit)
               className="p-6 bg-white rounded-lg border hover:shadow-lg transition-all"
             >
               <div className="flex justify-between items-start">
@@ -105,6 +136,7 @@ const UserManagement = () => {
                   </p>
                   <div className="mt-2">
                     <h4 className="text-sm font-medium mb-1">Permissões:</h4>
+<<<<<<< HEAD
 =======
               className="p-6 bg-white dark:bg-gray-800 rounded-lg border hover:shadow-lg transition-all"
             >
@@ -121,15 +153,21 @@ const UserManagement = () => {
                       Permissões:
                     </h4>
 >>>>>>> 22764d5 (Atualização do projeto - ajustes e novos arquivos)
+=======
+>>>>>>> 49493c5 (Primeiro commit)
                     <div className="flex flex-wrap gap-2">
                       {user.permissions.map((permission) => (
                         <span
                           key={permission}
 <<<<<<< HEAD
+<<<<<<< HEAD
                           className="px-2 py-1 bg-gray-100 rounded-full text-xs"
 =======
                           className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-xs text-gray-800 dark:text-gray-200"
 >>>>>>> 22764d5 (Atualização do projeto - ajustes e novos arquivos)
+=======
+                          className="px-2 py-1 bg-gray-100 rounded-full text-xs"
+>>>>>>> 49493c5 (Primeiro commit)
                         >
                           {permission}
                         </span>
@@ -210,4 +248,8 @@ const UserManagement = () => {
   );
 };
 
+<<<<<<< HEAD
 export default UserManagement;
+=======
+export default UserManagement;
+>>>>>>> 49493c5 (Primeiro commit)

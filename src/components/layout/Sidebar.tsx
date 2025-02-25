@@ -131,4 +131,8 @@ const Sidebar = () => {
   );
 };
 
+<<<<<<< HEAD
 export default Sidebar;
+=======
+export default Sidebar;
+>>>>>>> 49493c5 (Primeiro commit)

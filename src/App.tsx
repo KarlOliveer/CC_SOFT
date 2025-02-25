@@ -1,14 +1,21 @@
 import { Suspense } from "react";
+<<<<<<< HEAD
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useRoutes } from "react-router-dom"; // For tempo-routes
 import Home from "./components/home";
 import ProjectsPage from "./components/projects/ProjectsPage";
 import MaterialsPage from "./components/materials/MaterialPage";
+=======
+import { useRoutes, Routes, Route, Navigate } from "react-router-dom";
+import Home from "./components/home";
+import ProjectsPage from "./components/projects/ProjectsPage";
+>>>>>>> 49493c5 (Primeiro commit)
 import Layout from "./components/layout/Layout";
 import LoginForm from "./components/auth/LoginForm";
 import PrivateRoute from "./components/auth/PrivateRoute";
 import UserManagement from "./components/users/UserManagement";
 import routes from "tempo-routes";
+<<<<<<< HEAD
 import RequestsPage from "./components/requests/RequestsPage";
 
 function App() {
@@ -20,6 +27,10 @@ function App() {
   // Redirect to /login if not authenticated and not already on /login
   const shouldRedirectToLogin = !isAuthenticated && location.pathname !== "/login";
 
+=======
+
+function App() {
+>>>>>>> 49493c5 (Primeiro commit)
   return (
     <Suspense fallback={<p>Loading...</p>}>
       <Routes>
@@ -28,6 +39,7 @@ function App() {
         <Route
           path="/"
           element={
+<<<<<<< HEAD
             shouldRedirectToLogin ? (
               <Navigate to="/login" replace />
             ) : (
@@ -37,6 +49,13 @@ function App() {
                 </Layout>
               </PrivateRoute>
             )
+=======
+            <PrivateRoute>
+              <Layout>
+                <Home />
+              </Layout>
+            </PrivateRoute>
+>>>>>>> 49493c5 (Primeiro commit)
           }
         />
 
@@ -56,7 +75,11 @@ function App() {
           element={
             <PrivateRoute>
               <Layout>
+<<<<<<< HEAD
                 <MaterialsPage />
+=======
+                <Home />
+>>>>>>> 49493c5 (Primeiro commit)
               </Layout>
             </PrivateRoute>
           }
@@ -78,7 +101,11 @@ function App() {
           element={
             <PrivateRoute>
               <Layout>
+<<<<<<< HEAD
                 <RequestsPage />
+=======
+                <Home />
+>>>>>>> 49493c5 (Primeiro commit)
               </Layout>
             </PrivateRoute>
           }
@@ -119,6 +146,7 @@ function App() {
 
         {import.meta.env.VITE_TEMPO === "true" && <Route path="/tempobook/*" />}
 
+<<<<<<< HEAD
         {/* Catch-all route */}
         <Route
           path="*"
@@ -130,10 +158,17 @@ function App() {
             )
           }
         />
+=======
+        <Route path="*" element={<Navigate to="/" replace />} />
+>>>>>>> 49493c5 (Primeiro commit)
       </Routes>
       {import.meta.env.VITE_TEMPO === "true" && useRoutes(routes)}
     </Suspense>
   );
 }
 
+<<<<<<< HEAD
 export default App;
+=======
+export default App;
+>>>>>>> 49493c5 (Primeiro commit)
