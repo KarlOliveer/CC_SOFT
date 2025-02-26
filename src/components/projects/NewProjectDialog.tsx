@@ -1,10 +1,10 @@
+// src/components/NewProjectDialog.tsx
 import React from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,29 +20,27 @@ import {
 import { Plus } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import HardwareSpecsForm, { HardwareSpecs } from "./HardwareSpecsForm";
-import ReplacedComponentsForm from "./ReplacedComponentsForm";
-import BoardsForm from "./BoardsForm";
+import ReplacedComponentsForm, { Component } from "./ReplacedComponentsForm";
+import BoardsForm, { Board } from "./BoardsForm";
+import type { Project } from "@/types/types"; // Import the updated Project type
 
 interface NewProjectDialogProps {
-  onSubmit?: (data: any) => void;
+  onSubmit?: (data: Project) => void; // Update to accept the full Project type
   projectId?: string | null;
-  project?: any;
+  project?: Project | null; // Update to use the Project type
 }
 
-const defaultFormState = {
-  projectType: "",
+const defaultFormState: Omit<Project, "id"> = {
+  title: "",
+  type: "",
+  dueDate: "",
   serviceType: "",
-  hasBoards: false,
-  hardwareSpecs: null as HardwareSpecs | null,
+  description: "",
+  priority: "Média",
+  status: "Pendente",
+  hardwareSpecs: null,
   boards: [],
-  replacedComponents: [],
-  formData: {
-    title: "",
-    dueDate: "",
-    priority: "",
-    status: "Pendente",
-    description: "",
-  },
+  repairDetails: null,
 };
 
 const NewProjectDialog = ({
@@ -50,88 +48,41 @@ const NewProjectDialog = ({
   projectId = null,
   project = null,
 }: NewProjectDialogProps) => {
-  const isEditing = !!projectId;
-  const [open, setOpen] = React.useState(isEditing);
+  const isEditing = Boolean(project);
+  const [open, setOpen] = React.useState(projectId === "new" || isEditing);
 
+  // Reset form when dialog opens/closes or when editing
   React.useEffect(() => {
-    setOpen(isEditing);
-  }, [isEditing]);
+    setOpen(projectId === "new" || Boolean(project));
+  }, [projectId, project]);
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
     if (!newOpen && !isEditing) {
       // Reset form only when closing a new project dialog
-      setProjectType(defaultFormState.projectType);
-      setServiceType(defaultFormState.serviceType);
-      setHasBoards(defaultFormState.hasBoards);
-      setHardwareSpecs(defaultFormState.hardwareSpecs);
-      setBoards(defaultFormState.boards);
-      setReplacedComponents(defaultFormState.replacedComponents);
-      setFormData(defaultFormState.formData);
+      setFormData(defaultFormState);
     }
   };
 
-  const [projectType, setProjectType] = React.useState(
-    defaultFormState.projectType,
+  const [formData, setFormData] = React.useState<Omit<Project, "id">>(
+    project || defaultFormState
   );
-  const [serviceType, setServiceType] = React.useState(
-    defaultFormState.serviceType,
-  );
-  const [hasBoards, setHasBoards] = React.useState(defaultFormState.hasBoards);
-  const [hardwareSpecs, setHardwareSpecs] = React.useState(
-    defaultFormState.hardwareSpecs,
-  );
-  const [boards, setBoards] = React.useState(defaultFormState.boards);
-  const [replacedComponents, setReplacedComponents] = React.useState(
-    defaultFormState.replacedComponents,
-  );
-  const [formData, setFormData] = React.useState(defaultFormState.formData);
 
-  // Reset form when dialog opens/closes
-  React.useEffect(() => {
-    if (!open) {
-      if (!isEditing) {
-        setProjectType(defaultFormState.projectType);
-        setServiceType(defaultFormState.serviceType);
-        setHasBoards(defaultFormState.hasBoards);
-        setHardwareSpecs(defaultFormState.hardwareSpecs);
-        setBoards(defaultFormState.boards);
-        setReplacedComponents(defaultFormState.replacedComponents);
-        setFormData(defaultFormState.formData);
-      }
-    } else if (project) {
-      setProjectType(project.type || "");
-      setServiceType(project.serviceType || "");
-      setHasBoards(project.boards?.length > 0 || false);
-      setHardwareSpecs(project.hardwareSpecs || null);
-      setBoards(project.boards || []);
-      setReplacedComponents(project.repairDetails?.replacedComponents || []);
-      setFormData({
-        title: project.title || "",
-        dueDate: project.dueDate || "",
-        priority: project.priority || "",
-        status: project.status || "Pendente",
-        description: project.description || "",
-      });
-    }
-  }, [open, project, isEditing]);
-
-  const showHardwareTab = projectType === "pc" || projectType === "calibrador";
+  const showHardwareTab = formData.type === "pc" || formData.type === "calibrador";
   const showPlacaTab =
-    projectType === "placa" || (projectType === "calibrador" && hasBoards);
-  const showRepairTab = serviceType === "reparacao";
+    formData.type === "placa" || (formData.type === "calibrador" && formData.boards?.length > 0);
+  const showRepairTab = formData.serviceType === "reparacao";
 
   const handleSubmit = () => {
-    const projectData = {
+    const projectData: Project = {
+      id: isEditing ? project!.id : Math.random().toString(36).slice(2, 9), // Generate ID for new projects
       ...formData,
-      type: projectType,
-      serviceType,
-      hardwareSpecs,
-      boards: showPlacaTab ? boards : [],
+      hardwareSpecs: showHardwareTab ? formData.hardwareSpecs || null : null,
+      boards: showPlacaTab ? formData.boards || [] : [],
       repairDetails: showRepairTab
         ? {
-            description: formData.description,
-            replacedComponents,
+            description: formData.description || "",
+            replacedComponents: formData.repairDetails?.replacedComponents || [],
           }
         : null,
     };
@@ -139,8 +90,25 @@ const NewProjectDialog = ({
     setOpen(false);
   };
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: keyof Omit<Project, "id" | "hardwareSpecs" | "boards" | "repairDetails">, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleHardwareChange = (hardwareSpecs: HardwareSpecs | null) => {
+    setFormData((prev) => ({ ...prev, hardwareSpecs }));
+  };
+
+  const handleBoardsChange = (boards: Board[]) => {
+    setFormData((prev) => ({ ...prev, boards }));
+  };
+
+  const handleReplacedComponentsChange = (replacedComponents: Component[]) => {
+    setFormData((prev) => ({
+      ...prev,
+      repairDetails: prev.repairDetails
+        ? { ...prev.repairDetails, replacedComponents }
+        : { description: prev.description || "", replacedComponents },
+    }));
   };
 
   return (
@@ -177,9 +145,7 @@ const NewProjectDialog = ({
             <TabsContent value="geral">
               <div className="space-y-4 h-[400px] overflow-y-auto pr-4">
                 <div>
-                  <h4 className="text-sm font-medium mb-2">
-                    Título do Projeto
-                  </h4>
+                  <h4 className="text-sm font-medium mb-2">Título do Projeto</h4>
                   <Input
                     placeholder="Ex: Calibrador A"
                     value={formData.title}
@@ -193,15 +159,16 @@ const NewProjectDialog = ({
                     type="date"
                     placeholder="dd/mm/aaaa"
                     value={formData.dueDate}
-                    onChange={(e) =>
-                      handleInputChange("dueDate", e.target.value)
-                    }
+                    onChange={(e) => handleInputChange("dueDate", e.target.value)}
                   />
                 </div>
 
                 <div>
                   <h4 className="text-sm font-medium mb-2">Tipo</h4>
-                  <Select onValueChange={setProjectType} value={projectType}>
+                  <Select
+                    onValueChange={(value) => handleInputChange("type", value)}
+                    value={formData.type}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o tipo do projeto" />
                     </SelectTrigger>
@@ -214,14 +181,17 @@ const NewProjectDialog = ({
                   </Select>
                 </div>
 
-                {projectType === "calibrador" && (
+                {formData.type === "calibrador" && (
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id="hasBoards"
-                      checked={hasBoards}
-                      onCheckedChange={(checked) =>
-                        setHasBoards(checked as boolean)
-                      }
+                      checked={formData.boards?.length > 0 || false}
+                      onCheckedChange={(checked) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          boards: checked ? (prev.boards || []) : [],
+                        }));
+                      }}
                     />
                     <label
                       htmlFor="hasBoards"
@@ -234,7 +204,10 @@ const NewProjectDialog = ({
 
                 <div>
                   <h4 className="text-sm font-medium mb-2">Tipo de Serviço</h4>
-                  <Select onValueChange={setServiceType} value={serviceType}>
+                  <Select
+                    onValueChange={(value) => handleInputChange("serviceType", value)}
+                    value={formData.serviceType}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o tipo de serviço" />
                     </SelectTrigger>
@@ -249,9 +222,7 @@ const NewProjectDialog = ({
                   <h4 className="text-sm font-medium mb-2">Prioridade</h4>
                   <Select
                     value={formData.priority}
-                    onValueChange={(value) =>
-                      handleInputChange("priority", value)
-                    }
+                    onValueChange={(value) => handleInputChange("priority", value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione a prioridade" />
@@ -268,9 +239,7 @@ const NewProjectDialog = ({
                   <h4 className="text-sm font-medium mb-2">Status</h4>
                   <Select
                     value={formData.status}
-                    onValueChange={(value) =>
-                      handleInputChange("status", value)
-                    }
+                    onValueChange={(value) => handleInputChange("status", value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Pendente" />
@@ -288,9 +257,7 @@ const NewProjectDialog = ({
                   <Textarea
                     placeholder="Digite as observações do projeto"
                     value={formData.description}
-                    onChange={(e) =>
-                      handleInputChange("description", e.target.value)
-                    }
+                    onChange={(e) => handleInputChange("description", e.target.value)}
                   />
                 </div>
               </div>
@@ -300,9 +267,9 @@ const NewProjectDialog = ({
               <TabsContent value="hardware">
                 <div className="mt-4 h-[400px] overflow-y-auto pr-4">
                   <HardwareSpecsForm
-                    projectType={projectType}
-                    onChange={setHardwareSpecs}
-                    initialSpecs={project?.hardwareSpecs}
+                    projectType={formData.type}
+                    onChange={handleHardwareChange}
+                    initialSpecs={formData.hardwareSpecs || undefined}
                   />
                 </div>
               </TabsContent>
@@ -312,8 +279,8 @@ const NewProjectDialog = ({
               <TabsContent value="placa">
                 <div className="mt-4 h-[400px] overflow-y-auto pr-4">
                   <BoardsForm
-                    onChange={setBoards}
-                    initialBoards={project?.boards}
+                    onChange={handleBoardsChange}
+                    initialBoards={formData.boards || []}
                   />
                 </div>
               </TabsContent>
@@ -324,26 +291,20 @@ const NewProjectDialog = ({
                 <div className="mt-4 h-[400px] overflow-y-auto pr-4">
                   <div className="space-y-4">
                     <div>
-                      <h4 className="text-sm font-medium mb-2">
-                        Descrição da Reparação
-                      </h4>
+                      <h4 className="text-sm font-medium mb-2">Descrição da Reparação</h4>
                       <Textarea
                         placeholder="Descreva os detalhes da reparação"
                         className="min-h-[100px]"
                         value={formData.description}
-                        onChange={(e) =>
-                          handleInputChange("description", e.target.value)
-                        }
+                        onChange={(e) => handleInputChange("description", e.target.value)}
                       />
                     </div>
                     <div>
-                      <h4 className="text-sm font-medium mb-2">
-                        Componentes Trocados
-                      </h4>
+                      <h4 className="text-sm font-medium mb-2">Componentes Trocados</h4>
                       <ReplacedComponentsForm
-                        onChange={setReplacedComponents}
+                        onChange={handleReplacedComponentsChange}
                         initialComponents={
-                          project?.repairDetails?.replacedComponents
+                          formData.repairDetails?.replacedComponents || []
                         }
                       />
                     </div>
@@ -357,7 +318,7 @@ const NewProjectDialog = ({
             className="w-full bg-black text-white hover:bg-gray-800 mt-6"
             onClick={handleSubmit}
           >
-            {isEditing ? "Salvar Alterações" : "Criar Projeto"}
+            {isEditing ? "Guardar Alterações" : "Criar Projeto"}
           </Button>
         </Tabs>
       </DialogContent>

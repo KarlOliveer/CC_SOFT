@@ -1,3 +1,6 @@
+// src/components/ProjectsPage.tsx
+"use client";
+
 import React from "react";
 import NewProjectDialog from "./NewProjectDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -5,71 +8,119 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { downloadProjectReport } from "./DownloadReport";
-
-interface Project {
-  id: string;
-  title: string;
-  type: string;
-  dueDate: string;
-  serviceType: string;
-  description: string;
-  priority: "Alta" | "Média" | "Baixa";
-  status: "Pendente" | "Em Andamento" | "Concluído";
-  hardwareSpecs?: any;
-  boards?: any[];
-  repairDetails?: {
-    description: string;
-    replacedComponents: Array<{ name: string; quantity: string }>;
-  };
-}
+import { ProjectReport } from "./ProjectReport"; // Import the new ProjectReport component
+import type { Project } from "@/types/types"; // Import the updated Project type
 
 const ProjectsPage = () => {
-  const [editingProject, setEditingProject] = React.useState<string | null>(
-    null,
-  );
-  const [activeProjects, setActiveProjects] = React.useState<Project[]>([
-    {
-      id: "1",
-      title: "Calibrador A",
-      type: "Calibrador",
-      dueDate: "2024-04-30",
-      serviceType: "Montagem",
-      description: "Calibração mensal necessária",
-      priority: "Alta",
-      status: "Pendente",
-    },
-    {
-      id: "2",
-      title: "Reparo PC-001",
-      type: "PC",
-      dueDate: "2024-05-15",
-      serviceType: "Reparação",
-      description: "Troca de componentes",
-      priority: "Média",
-      status: "Em Andamento",
-    },
-  ]);
-  const [completedProjects, setCompletedProjects] = React.useState<Project[]>(
-    [],
-  );
+  const [editingProject, setEditingProject] = React.useState<string | null>(null);
+  const [activeProjects, setActiveProjects] = React.useState<Project[]>([]);
+  const [completedProjects, setCompletedProjects] = React.useState<Project[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [reportOpen, setReportOpen] = React.useState<string | null>(null); // Track which project report is open
 
-  const handleProjectComplete = (projectId: string) => {
-    const project = activeProjects.find((p) => p.id === projectId);
-    if (project) {
-      const updatedProject = { ...project, status: "Concluído" };
-      setCompletedProjects([...completedProjects, updatedProject]);
-      setActiveProjects(activeProjects.filter((p) => p.id !== projectId));
+  // Load projects from localStorage
+  const loadProjects = () => {
+    try {
+      const storedActive = localStorage.getItem("activeProjects");
+      const storedCompleted = localStorage.getItem("completedProjects");
+      if (storedActive) {
+        setActiveProjects(JSON.parse(storedActive));
+      }
+      if (storedCompleted) {
+        setCompletedProjects(JSON.parse(storedCompleted));
+      }
+    } catch (error) {
+      console.error("Error reading from localStorage:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleNewProject = (data: any) => {
-    const newProject = {
-      id: Math.random().toString(36).substr(2, 9),
-      ...data,
-      status: "Pendente",
-    };
-    setActiveProjects([...activeProjects, newProject]);
+  // Save projects to localStorage
+  const saveProjects = (active: Project[], completed: Project[]) => {
+    try {
+      localStorage.setItem("activeProjects", JSON.stringify(active));
+      localStorage.setItem("completedProjects", JSON.stringify(completed));
+      setActiveProjects(active);
+      setCompletedProjects(completed);
+    } catch (error) {
+      console.error("Error writing to localStorage:", error);
+    }
   };
+
+  // Load on mount and when tab becomes visible
+  React.useEffect(() => {
+    loadProjects();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        loadProjects();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, []);
+
+  // Handle project completion
+  const handleProjectComplete = (projectId: string) => {
+    const project = activeProjects.find((p) => p.id === projectId);
+    if (project) {
+      const updatedProject = { ...project, status: "Concluído" as const };
+      const newActive = activeProjects.filter((p) => p.id !== projectId);
+      const newCompleted = [...completedProjects, updatedProject];
+      saveProjects(newActive, newCompleted);
+    }
+  };
+
+  // Create or update a project
+  const handleNewProject = (data: Omit<Project, "id">) => {
+    const newProject: Project = {
+      id: Math.random().toString(36).slice(2, 9),
+      ...data,
+    };
+    if (newProject.status === "Concluído") {
+      saveProjects(activeProjects, [...completedProjects, newProject]);
+    } else {
+      saveProjects([...activeProjects, newProject], completedProjects);
+    }
+    setEditingProject(null);
+  };
+
+  // Edit an existing project
+  const handleEditProject = (projectId: string, data: Partial<Project>) => {
+    const project = activeProjects.find((p) => p.id === projectId);
+    if (project) {
+      const updatedProject = { ...project, ...data };
+      if (updatedProject.status === "Concluído") {
+        const newActive = activeProjects.filter((p) => p.id !== projectId);
+        const newCompleted = [...completedProjects, updatedProject];
+        saveProjects(newActive, newCompleted);
+      } else {
+        const newActive = activeProjects.map((p) =>
+          p.id === projectId ? updatedProject : p
+        );
+        saveProjects(newActive, completedProjects);
+      }
+    }
+    setEditingProject(null);
+  };
+
+  // Sidebar categories
+  const categories = ["Todos", "PC", "Calibrador", "Placa", "Outros"];
+
+  // Compute category counts dynamically with case-insensitive comparison
+  const getCategoryCount = (type: string) => {
+    const typeLower = type.toLowerCase();
+    return typeLower === "todos"
+      ? activeProjects.length + completedProjects.length
+      : activeProjects.filter((p) => p.type.toLowerCase() === typeLower).length +
+          completedProjects.filter((p) => p.type.toLowerCase() === typeLower).length;
+  };
+
+  if (isLoading) {
+    return <div className="p-8 text-center">Carregando projetos...</div>;
+  }
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -88,209 +139,197 @@ const ProjectsPage = () => {
       </div>
 
       <div className="flex gap-8">
-        {/* Left sidebar */}
+        {/* Sidebar */}
         <div className="w-64 space-y-1">
-          <div className="flex items-center justify-between py-2 px-4 rounded-lg hover:bg-gray-100 cursor-pointer">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Todos</span>
-            </div>
-            <span className="text-sm text-gray-500">
-              {activeProjects.length + completedProjects.length}
-            </span>
-          </div>
-          {["PC", "Calibrador", "Placa", "Outros"].map((type) => (
+          {categories.map((type) => (
             <div
               key={type}
-              className="flex items-center justify-between py-2 px-4 rounded-lg hover:bg-gray-100 cursor-pointer"
+              className="
+                flex items-center justify-between
+                py-2 px-4
+                rounded-lg
+                hover:bg-gray-100
+                dark:hover:bg-gray-700
+                cursor-pointer
+                transition-colors
+              "
             >
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">{type}</span>
-              </div>
-              <span className="text-sm text-gray-500">
-                {activeProjects.filter((p) => p.type === type).length +
-                  completedProjects.filter((p) => p.type === type).length}
-              </span>
+              <span className="text-sm font-medium">{type}</span>
+              <span className="text-sm text-gray-500">{getCategoryCount(type)}</span>
             </div>
           ))}
         </div>
 
         {/* Main content */}
         <div className="flex-1">
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-2">Todos os Projetos</h2>
-            <Tabs defaultValue="em-andamento" className="w-full">
-              <TabsList>
-                <TabsTrigger value="em-andamento">Em Andamento</TabsTrigger>
-                <TabsTrigger value="concluidos">Concluídos</TabsTrigger>
-              </TabsList>
+          <h2 className="text-xl font-semibold mb-2">Todos os Projetos</h2>
+          <Tabs defaultValue="em-andamento" className="w-full">
+            <TabsList>
+              <TabsTrigger value="em-andamento">Em Andamento</TabsTrigger>
+              <TabsTrigger value="concluidos">Concluídos</TabsTrigger>
+            </TabsList>
 
-              <TabsContent value="em-andamento" className="mt-4">
-                <div className="space-y-4">
-                  {activeProjects.map((project) => (
+            <TabsContent value="em-andamento" className="mt-4">
+              <div className="space-y-4">
+                {activeProjects.map((project) => (
+                  <div
+                    key={project.id}
+                    className="
+                      p-6
+                      bg-white dark:bg-gray-800
+                      text-gray-900 dark:text-gray-100
+                      rounded-lg border hover:shadow-lg transition-all
+                    "
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="text-lg font-semibold">{project.title}</h3>
+                          <div
+                            className={cn(
+                              "px-2 py-1 rounded-full text-xs font-medium",
+                              project.priority === "Alta"
+                                ? "bg-red-100 text-red-800"
+                                : project.priority === "Média"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-green-100 text-green-800"
+                            )}
+                          >
+                            {project.priority}
+                          </div>
+                        </div>
+                        <div className="text-sm text-gray-500 mb-4">{project.type}</div>
+                        <div className="space-y-2">
+                          <div className="text-sm">Data Limite: {project.dueDate}</div>
+                          <div className="text-sm">Tipo de Serviço: {project.serviceType}</div>
+                          <div className="text-sm text-gray-500">{project.description}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setEditingProject(project.id)}
+                          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                            <path d="m15 5 4 4" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => handleProjectComplete(project.id)}
+                          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
+                            <path d="m9 12 2 2 4-4" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="concluidos" className="mt-4">
+              <div className="space-y-4">
+                {completedProjects.length === 0 ? (
+                  <div className="text-center text-gray-500 py-8">
+                    Nenhum projeto concluído
+                  </div>
+                ) : (
+                  completedProjects.map((project) => (
                     <div
                       key={project.id}
-                      className="p-6 bg-white rounded-lg border hover:shadow-lg transition-all"
+                      className="
+                        p-6
+                        bg-white dark:bg-gray-800
+                        text-gray-900 dark:text-gray-100
+                        rounded-lg border transition-all
+                      "
                     >
                       <div className="flex justify-between items-start">
                         <div>
                           <div className="flex items-center gap-2 mb-2">
-                            <h3 className="text-lg font-semibold">
-                              {project.title}
-                            </h3>
-                            <div
-                              className={cn(
-                                "px-2 py-1 rounded-full text-xs font-medium",
-                                project.priority === "Alta"
-                                  ? "bg-red-100 text-red-800"
-                                  : project.priority === "Média"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : "bg-green-100 text-green-800",
-                              )}
-                            >
-                              {project.priority}
-                            </div>
+                            <h3 className="text-lg font-semibold">{project.title}</h3>
                           </div>
-                          <div className="text-sm text-gray-500 mb-4">
-                            {project.type}
-                          </div>
+                          <div className="text-sm text-gray-500 mb-4">{project.type}</div>
                           <div className="space-y-2">
-                            <div className="text-sm">
-                              Data Limite: {project.dueDate}
-                            </div>
-                            <div className="text-sm">
-                              Tipo de Serviço: {project.serviceType}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {project.description}
-                            </div>
+                            <div className="text-sm">Data Limite: {project.dueDate}</div>
+                            <div className="text-sm">Tipo de Serviço: {project.serviceType}</div>
+                            <div className="text-sm text-gray-500">{project.description}</div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => {
-                              const projectToEdit = activeProjects.find(
-                                (p) => p.id === project.id,
-                              );
-                              if (projectToEdit) {
-                                setEditingProject(project.id);
-                              }
+                        <div className="flex flex-col items-end gap-2">
+                          <Button
+                            variant="link"
+                            size="sm"
+                            onClick={async () => {
+                              // Ensure the report is rendered before downloading
+                              setReportOpen(project.id); // Open the report dialog to render it
+                              await new Promise((resolve) => setTimeout(resolve, 300)); // Wait for rendering
+                              setReportOpen(null); // Close immediately to avoid showing the dialog
+                              await downloadProjectReport(project); // Trigger the download
                             }}
-                            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                            className="text-blue-600 hover:text-blue-800 p-0"
                           >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                              <path d="m15 5 4 4" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleProjectComplete(project.id)}
-                            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
-                              <path d="m9 12 2 2 4-4" />
-                            </svg>
-                          </button>
+                            Download Relatório
+                          </Button>
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </TabsContent>
-
-              <TabsContent value="concluidos" className="mt-4">
-                <div className="space-y-4">
-                  {completedProjects.length === 0 ? (
-                    <div className="text-center text-gray-500 py-8">
-                      Nenhum projeto concluído
-                    </div>
-                  ) : (
-                    completedProjects.map((project) => (
-                      <div
-                        key={project.id}
-                        className="p-6 bg-white rounded-lg border"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="flex items-center gap-2 mb-2">
-                              <h3 className="text-lg font-semibold">
-                                {project.title}
-                              </h3>
-                            </div>
-                            <div className="text-sm text-gray-500 mb-4">
-                              {project.type}
-                            </div>
-                            <div className="space-y-2">
-                              <div className="text-sm">
-                                Data Limite: {project.dueDate}
-                              </div>
-                              <div className="text-sm">
-                                Tipo de Serviço: {project.serviceType}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                {project.description}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex flex-col items-end gap-2">
-                            <button
-                              onClick={() => downloadProjectReport(project)}
-                              className="text-sm text-blue-600 hover:text-blue-800"
-                            >
-                              Baixar Relatório
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </TabsContent>
-            </Tabs>
-          </div>
+                  ))
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
+
       <NewProjectDialog
         key={`project-dialog-${editingProject || "new"}`}
         projectId={editingProject}
         project={
-          editingProject
-            ? activeProjects.find((p) => p.id === editingProject)
+          editingProject && editingProject !== "new"
+            ? activeProjects.find((p) => p.id === editingProject) || null
             : null
         }
         onSubmit={(data) => {
-          if (editingProject) {
-            setActiveProjects(
-              activeProjects.map((p) =>
-                p.id === editingProject ? { ...p, ...data } : p,
-              ),
-            );
-          } else {
+          if (!editingProject || editingProject === "new") {
             handleNewProject(data);
+          } else {
+            handleEditProject(editingProject, data);
           }
-          setEditingProject(null);
         }}
       />
+
+      {reportOpen && (
+        <ProjectReport
+          project={completedProjects.find((p) => p.id === reportOpen)!}
+          open={!!reportOpen}
+          onOpenChange={(open) => setReportOpen(open ? reportOpen : null)}
+        />
+      )}
     </div>
   );
 };

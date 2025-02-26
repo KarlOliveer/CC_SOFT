@@ -3,7 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "@/components/ui/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+
+import logo from "@/assets/mcm_logo.png";
 
 export default function LoginForm() {
   const navigate = useNavigate();
@@ -12,41 +20,52 @@ export default function LoginForm() {
     password: "",
   });
 
+  // State for the error dialog
+  const [errorDialogOpen, setErrorDialogOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     // Check admin credentials
-    if (
-      formData.username === "admin.admin" &&
-      formData.password === "admingenerico"
-    ) {
+    if (formData.username === "admin.admin" && formData.password === "admin") {
       localStorage.setItem("isAuthenticated", "true");
       localStorage.setItem("user", formData.username);
       navigate("/");
       return;
     }
 
-    // Check other users
+    // Check other users from localStorage
     const users = JSON.parse(localStorage.getItem("users") || "[]");
     const user = users.find((u: any) => u.username === formData.username);
 
-    if (user && user.password === formData.password) {
-      localStorage.setItem("isAuthenticated", "true");
-      localStorage.setItem("user", user.username);
-      navigate("/");
-    } else {
-      toast({
-        title: "Erro ao fazer login",
-        description: "Usuário ou senha inválidos",
-        variant: "destructive",
-      });
+    // If user not found
+    if (!user) {
+      setErrorMessage(`O usuário "${formData.username}" não existe no sistema.`);
+      setErrorDialogOpen(true);
+      return;
     }
+
+    // If user found but password is incorrect
+    if (user.password !== formData.password) {
+      setErrorMessage("A senha digitada está incorreta.");
+      setErrorDialogOpen(true);
+      return;
+    }
+
+    // If user found and password matches
+    localStorage.setItem("isAuthenticated", "true");
+    localStorage.setItem("user", user.username);
+    navigate("/");
   };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
       <Card className="w-[350px]">
         <CardHeader>
+          <div className="flex justify-center mb-4">
+            <img src={logo} alt="MCM Systems Logo" className="h-12 w-auto" />
+          </div>
           <CardTitle>Login</CardTitle>
         </CardHeader>
         <CardContent>
@@ -76,6 +95,21 @@ export default function LoginForm() {
           </form>
         </CardContent>
       </Card>
+
+      {/* Error Dialog */}
+      <Dialog open={errorDialogOpen} onOpenChange={setErrorDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Erro ao fazer login</DialogTitle>
+          </DialogHeader>
+          <p>{errorMessage}</p>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setErrorDialogOpen(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
