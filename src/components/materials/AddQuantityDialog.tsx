@@ -4,7 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+<<<<<<< HEAD
 import { Material } from "@/types/types";
+=======
+import { Material } from "./types";
+>>>>>>> 5f3c6f3e2934f26122d72d708ee503906e763a00
 
 interface AddQuantityDialogProps {
   open: boolean;

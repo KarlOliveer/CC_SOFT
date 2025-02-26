@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 // src/components/ProjectsPage.tsx
+=======
+>>>>>>> 5f3c6f3e2934f26122d72d708ee503906e763a00
 "use client";
 
 import React from "react";
@@ -16,7 +19,10 @@ const ProjectsPage = () => {
   const [activeProjects, setActiveProjects] = React.useState<Project[]>([]);
   const [completedProjects, setCompletedProjects] = React.useState<Project[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
+<<<<<<< HEAD
   const [reportOpen, setReportOpen] = React.useState<string | null>(null); // Track which project report is open
+=======
+>>>>>>> 5f3c6f3e2934f26122d72d708ee503906e763a00
 
   // Load projects from localStorage
   const loadProjects = () => {
@@ -281,6 +287,7 @@ const ProjectsPage = () => {
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-2">
+<<<<<<< HEAD
                           <Button
                             variant="link"
                             size="sm"
@@ -295,6 +302,14 @@ const ProjectsPage = () => {
                           >
                             Download Relatório
                           </Button>
+=======
+                          <button
+                            onClick={() => downloadProjectReport(project)}
+                            className="text-sm text-blue-600 hover:text-blue-800"
+                          >
+                            Baixar Relatório
+                          </button>
+>>>>>>> 5f3c6f3e2934f26122d72d708ee503906e763a00
                         </div>
                       </div>
                     </div>

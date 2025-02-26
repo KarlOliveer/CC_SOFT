@@ -9,7 +9,11 @@ import MaterialForm from "./MaterialForm";
 import MaterialList from "./MaterialList";
 import ConsumptionDialog from "./ConsumptionDialog";
 import AddQuantityDialog from "./AddQuantityDialog";
+<<<<<<< HEAD
 import { Material, Consumption } from "@/types/types";
+=======
+import { Material, Consumption } from "./types";
+>>>>>>> 5f3c6f3e2934f26122d72d708ee503906e763a00
 
 const MaterialsPage = () => {
   const [materials, setMaterials] = React.useState<Material[]>([]);

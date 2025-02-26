@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // src/components/NewProjectDialog.tsx
+=======
+
+>>>>>>> 5f3c6f3e2934f26122d72d708ee503906e763a00
 import React from "react";
 import {
   Dialog,
@@ -55,7 +59,10 @@ const NewProjectDialog = ({
   React.useEffect(() => {
     setOpen(projectId === "new" || Boolean(project));
   }, [projectId, project]);
+<<<<<<< HEAD
 
+=======
+>>>>>>> 5f3c6f3e2934f26122d72d708ee503906e763a00
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
     if (!newOpen && !isEditing) {

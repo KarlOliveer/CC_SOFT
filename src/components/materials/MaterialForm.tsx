@@ -1,7 +1,11 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+<<<<<<< HEAD
 import { Material } from "@/types/types";
+=======
+import { Material } from "./types";
+>>>>>>> 5f3c6f3e2934f26122d72d708ee503906e763a00
 
 interface MaterialFormProps {
   onSubmit: (material: Material) => void;

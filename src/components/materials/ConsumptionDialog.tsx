@@ -2,7 +2,11 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+<<<<<<< HEAD
 import { Material } from "@/types/types";
+=======
+import { Material } from "./types";
+>>>>>>> 5f3c6f3e2934f26122d72d708ee503906e763a00
 
 interface ConsumptionDialogProps {
   open: boolean;
