@@ -1,4 +1,5 @@
 import React from "react";
+import { motion } from "framer-motion";
 import PendingSection from "./PendingSection";
 import StatsCard from "./StatsCard";
 import { Package, FileText, TestTube, MessageSquare } from "lucide-react";
@@ -8,20 +9,45 @@ interface DashboardGridProps {
   onInventoryClick?: (id: string) => void;
 }
 
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const item = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0 },
+};
+
 const DashboardGrid = ({
   onProjectClick = () => {},
   onInventoryClick = () => {},
 }: DashboardGridProps) => {
   return (
-    <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <motion.div
+      initial="hidden"
+      animate="show"
+      variants={container}
+      className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen"
+    >
       <div className="max-w-7xl mx-auto space-y-6">
-        <h1 className="text-4xl font-bold mb-2">Dashboard</h1>
-        <p className="text-gray-500 dark:text-gray-400 mb-8">
-          Bem-vindo ao seu painel de gerenciamento técnico
-        </p>
+        <motion.div variants={item}>
+          <h1 className="text-4xl font-bold mb-2">Dashboard</h1>
+          <p className="text-gray-500 dark:text-gray-400 mb-8">
+            Bem-vindo ao seu painel de gerenciamento técnico
+          </p>
+        </motion.div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <motion.div
+          variants={item}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+        >
           <StatsCard
             icon={<FileText className="h-6 w-6" />}
             title="Projetos Ativos"
@@ -42,10 +68,13 @@ const DashboardGrid = ({
             title="Pedidos em Aberto"
             value={8}
           />
-        </div>
+        </motion.div>
 
         {/* Pending Sections */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <motion.div
+          variants={item}
+          className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+        >
           <PendingSection
             title="Projetos Pendentes"
             icon={<FileText className="h-5 w-5 text-gray-500" />}
@@ -94,9 +123,9 @@ const DashboardGrid = ({
               },
             ]}
           />
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
