@@ -2,7 +2,7 @@ import React from "react";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Plus, X } from "lucide-react";
+import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import {
   Select,
   SelectContent,
@@ -87,6 +87,27 @@ const HardwareSpecsForm = ({
   onChange = () => {},
   initialSpecs,
 }: HardwareSpecsFormProps) => {
+  // Load saved models from localStorage
+  const [savedModels, setSavedModels] = React.useState(() => {
+    const stored = localStorage.getItem("savedHardwareModels");
+    return stored
+      ? JSON.parse(stored)
+      : {
+          processor: [],
+          motherboard: [],
+          ram: [],
+          ssd: [],
+          ethernetCard: [],
+          wifiAdapter: [],
+          networkSwitch: [],
+          mioCard: [],
+          shentekCard: [],
+          camera: [],
+          securityPen: [],
+          powerSupply: [],
+        };
+  });
+
   const [specs, setSpecs] = React.useState<HardwareSpecs>({
     processor: "",
     motherboard: "",
@@ -126,6 +147,68 @@ const HardwareSpecsForm = ({
     }
   }, [initialSpecs]);
 
+  // Function to save models when project is created/updated
+  const saveNewModels = () => {
+    const newModels = { ...savedModels };
+    let hasChanges = false;
+
+    // Check each field for new models
+    const checkAndAddModel = (category: string, value: string) => {
+      if (value && !newModels[category].includes(value)) {
+        newModels[category] = [...newModels[category], value];
+        hasChanges = true;
+      }
+    };
+
+    // Check all relevant fields
+    checkAndAddModel("processor", specs.processor);
+    checkAndAddModel("motherboard", specs.motherboard);
+    checkAndAddModel("ram", specs.ram.model);
+    checkAndAddModel("ssd", specs.ssd.model);
+    checkAndAddModel("powerSupply", specs.powerSupply);
+    if (specs.ethernetCard.included) {
+      checkAndAddModel("ethernetCard", specs.ethernetCard.model);
+    }
+    if (specs.wifiAdapter.included) {
+      checkAndAddModel("wifiAdapter", specs.wifiAdapter.model);
+    }
+    if (specs.networkSwitch.included) {
+      checkAndAddModel("networkSwitch", specs.networkSwitch.model);
+    }
+    if (specs.mioCard?.included) {
+      checkAndAddModel("mioCard", specs.mioCard.model);
+    }
+    if (specs.shentekCard?.included) {
+      checkAndAddModel("shentekCard", specs.shentekCard.model);
+    }
+    if (specs.securityPen?.model) {
+      checkAndAddModel("securityPen", specs.securityPen.model);
+    }
+
+    if (hasChanges) {
+      setSavedModels(newModels);
+      localStorage.setItem("savedHardwareModels", JSON.stringify(newModels));
+    }
+  };
+
+  // Call saveNewModels when form is submitted
+  React.useEffect(() => {
+    const handleBeforeUnload = () => {
+      saveNewModels();
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [specs]);
+
+  const handleModelDelete = (category: string, value: string) => {
+    const newModels = {
+      ...savedModels,
+      [category]: savedModels[category].filter((m) => m !== value),
+    };
+    setSavedModels(newModels);
+    localStorage.setItem("savedHardwareModels", JSON.stringify(newModels));
+  };
+
   const handleChange = <K extends keyof HardwareSpecs>(
     field: K,
     value: HardwareSpecs[K],
@@ -151,47 +234,27 @@ const HardwareSpecsForm = ({
     onChange(newSpecs);
   };
 
-  const addComponent = () => {
-    const newSpecs = {
-      ...specs,
-      additionalComponents: [
-        ...specs.additionalComponents,
-        { name: "", quantity: "" },
-      ],
-    };
-    setSpecs(newSpecs);
-    onChange(newSpecs);
-  };
-
-  const removeComponent = (index: number) => {
-    const newSpecs = {
-      ...specs,
-      additionalComponents: specs.additionalComponents.filter(
-        (_, i) => i !== index,
-      ),
-    };
-    setSpecs(newSpecs);
-    onChange(newSpecs);
-  };
-
   return (
     <div className="space-y-6">
       {/* Common Hardware Fields */}
       <div className="space-y-4">
         <div>
           <h4 className="text-sm font-medium mb-2">Processador</h4>
-          <Input
+          <AutocompleteInput
             placeholder="Ex: Intel i7 12700K"
             value={specs.processor}
+            options={savedModels.processor}
             onChange={(e) => handleChange("processor", e.target.value)}
+            onDelete={(value) => handleModelDelete("processor", value)}
           />
         </div>
 
         <div>
           <h4 className="text-sm font-medium mb-2">Placa Mãe</h4>
-          <Input
+          <AutocompleteInput
             placeholder="Ex: ASUS ROG STRIX B550-F"
             value={specs.motherboard}
+            options={savedModels.motherboard}
             onChange={(e) => handleChange("motherboard", e.target.value)}
           />
         </div>
@@ -199,9 +262,10 @@ const HardwareSpecsForm = ({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <h4 className="text-sm font-medium mb-2">Modelo RAM</h4>
-            <Input
+            <AutocompleteInput
               placeholder="Ex: Corsair Vengeance"
               value={specs.ram.model}
+              options={savedModels.ram}
               onChange={(e) =>
                 handleNestedChange("ram", "model", e.target.value)
               }
@@ -223,9 +287,10 @@ const HardwareSpecsForm = ({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <h4 className="text-sm font-medium mb-2">Modelo SSD</h4>
-            <Input
+            <AutocompleteInput
               placeholder="Ex: Samsung 970 EVO"
               value={specs.ssd.model}
+              options={savedModels.ssd}
               onChange={(e) =>
                 handleNestedChange("ssd", "model", e.target.value)
               }
@@ -268,9 +333,10 @@ const HardwareSpecsForm = ({
             <div className="ml-6 space-y-4">
               <div>
                 <h4 className="text-sm font-medium mb-2">Modelo</h4>
-                <Input
+                <AutocompleteInput
                   placeholder="Ex: Intel I350-T4"
                   value={specs.ethernetCard.model}
+                  options={savedModels.ethernetCard}
                   onChange={(e) =>
                     handleNestedChange("ethernetCard", "model", e.target.value)
                   }
@@ -315,67 +381,6 @@ const HardwareSpecsForm = ({
         <div className="space-y-4">
           <div className="flex items-center space-x-2">
             <Checkbox
-              id="serial"
-              checked={specs.serialCard.included}
-              onCheckedChange={(checked) =>
-                handleNestedChange("serialCard", "included", checked)
-              }
-            />
-            <label
-              htmlFor="serial"
-              className="text-sm font-medium leading-none"
-            >
-              Placa Serial
-            </label>
-          </div>
-
-          {specs.serialCard.included && (
-            <div className="ml-6 space-y-4">
-              <div>
-                <h4 className="text-sm font-medium mb-2">Modelo</h4>
-                <Input
-                  placeholder="Ex: PCI Express RS232"
-                  value={specs.serialCard.model}
-                  onChange={(e) =>
-                    handleNestedChange("serialCard", "model", e.target.value)
-                  }
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Número de Portas</h4>
-                  <Input
-                    type="number"
-                    placeholder="Ex: 2"
-                    value={specs.serialCard.ports}
-                    onChange={(e) =>
-                      handleNestedChange("serialCard", "ports", e.target.value)
-                    }
-                  />
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Quantidade</h4>
-                  <Input
-                    type="number"
-                    placeholder="Ex: 1"
-                    value={specs.serialCard.quantity}
-                    onChange={(e) =>
-                      handleNestedChange(
-                        "serialCard",
-                        "quantity",
-                        e.target.value,
-                      )
-                    }
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-4">
-          <div className="flex items-center space-x-2">
-            <Checkbox
               id="wifi"
               checked={specs.wifiAdapter.included}
               onCheckedChange={(checked) =>
@@ -390,9 +395,10 @@ const HardwareSpecsForm = ({
           {specs.wifiAdapter.included && (
             <div className="ml-6">
               <h4 className="text-sm font-medium mb-2">Modelo</h4>
-              <Input
+              <AutocompleteInput
                 placeholder="Ex: Intel AX200"
                 value={specs.wifiAdapter.model}
+                options={savedModels.wifiAdapter}
                 onChange={(e) =>
                   handleNestedChange("wifiAdapter", "model", e.target.value)
                 }
@@ -422,9 +428,10 @@ const HardwareSpecsForm = ({
             <div className="ml-6 space-y-4">
               <div>
                 <h4 className="text-sm font-medium mb-2">Modelo</h4>
-                <Input
+                <AutocompleteInput
                   placeholder="Ex: TP-Link TL-SG108"
                   value={specs.networkSwitch.model}
+                  options={savedModels.networkSwitch}
                   onChange={(e) =>
                     handleNestedChange("networkSwitch", "model", e.target.value)
                   }
@@ -454,9 +461,10 @@ const HardwareSpecsForm = ({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <h4 className="text-sm font-medium mb-2">Modelo</h4>
-                <Input
+                <AutocompleteInput
                   placeholder="Digite o modelo"
                   value={specs.securityPen?.model || ""}
+                  options={savedModels.securityPen}
                   onChange={(e) =>
                     handleNestedChange("securityPen", "model", e.target.value)
                   }
@@ -496,9 +504,10 @@ const HardwareSpecsForm = ({
               <div className="ml-6 space-y-4">
                 <div>
                   <h4 className="text-sm font-medium mb-2">Modelo</h4>
-                  <Input
+                  <AutocompleteInput
                     placeholder="Digite o modelo"
                     value={specs.mioCard?.model || ""}
+                    options={savedModels.mioCard}
                     onChange={(e) =>
                       handleNestedChange("mioCard", "model", e.target.value)
                     }
@@ -544,9 +553,10 @@ const HardwareSpecsForm = ({
               <div className="ml-6 space-y-4">
                 <div>
                   <h4 className="text-sm font-medium mb-2">Modelo</h4>
-                  <Input
+                  <AutocompleteInput
                     placeholder="Digite o modelo"
                     value={specs.shentekCard?.model || ""}
+                    options={savedModels.shentekCard}
                     onChange={(e) =>
                       handleNestedChange("shentekCard", "model", e.target.value)
                     }
@@ -589,112 +599,6 @@ const HardwareSpecsForm = ({
               </div>
             )}
           </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="camera"
-                checked={specs.camera?.included}
-                onCheckedChange={(checked) =>
-                  handleNestedChange("camera", "included", checked)
-                }
-              />
-              <label
-                htmlFor="camera"
-                className="text-sm font-medium leading-none"
-              >
-                Câmera
-              </label>
-            </div>
-
-            {specs.camera?.included && (
-              <div className="ml-6 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Tipo da Câmera</h4>
-                    <Input
-                      placeholder="Digite o tipo"
-                      value={specs.camera?.type}
-                      onChange={(e) =>
-                        handleNestedChange("camera", "type", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Quantidade</h4>
-                    <Input
-                      type="number"
-                      placeholder="Ex: 1"
-                      value={specs.camera?.quantity}
-                      onChange={(e) =>
-                        handleNestedChange("camera", "quantity", e.target.value)
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Tipo da Lente</h4>
-                    <Input
-                      placeholder="Digite o tipo"
-                      value={specs.camera?.lensType}
-                      onChange={(e) =>
-                        handleNestedChange("camera", "lensType", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Quantidade</h4>
-                    <Input
-                      type="number"
-                      placeholder="Ex: 1"
-                      value={specs.camera?.lensQuantity}
-                      onChange={(e) =>
-                        handleNestedChange(
-                          "camera",
-                          "lensQuantity",
-                          e.target.value,
-                        )
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Tipo do Cabo</h4>
-                    <Input
-                      placeholder="Digite o tipo"
-                      value={specs.camera?.cableType}
-                      onChange={(e) =>
-                        handleNestedChange(
-                          "camera",
-                          "cableType",
-                          e.target.value,
-                        )
-                      }
-                    />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Quantidade</h4>
-                    <Input
-                      type="number"
-                      placeholder="Ex: 1"
-                      value={specs.camera?.cableQuantity}
-                      onChange={(e) =>
-                        handleNestedChange(
-                          "camera",
-                          "cableQuantity",
-                          e.target.value,
-                        )
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       )}
 
@@ -711,66 +615,13 @@ const HardwareSpecsForm = ({
 
         <div>
           <h4 className="text-sm font-medium mb-2">Fonte de Alimentação</h4>
-          <Input
+          <AutocompleteInput
             placeholder="Ex: 500W 80 Plus"
             value={specs.powerSupply}
+            options={savedModels.powerSupply}
             onChange={(e) => handleChange("powerSupply", e.target.value)}
           />
         </div>
-      </div>
-
-      {/* Additional Components */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h4 className="text-sm font-medium">Componentes Adicionais</h4>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={addComponent}
-            className="h-8"
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Adicionar
-          </Button>
-        </div>
-
-        {specs.additionalComponents.map((component, index) => (
-          <div key={index} className="flex items-center gap-2">
-            <div className="flex-1 grid grid-cols-2 gap-2">
-              <Input
-                placeholder="Nome do Componente"
-                value={component.name}
-                onChange={(e) =>
-                  handleNestedChange(
-                    "additionalComponents",
-                    `${index}.name`,
-                    e.target.value,
-                  )
-                }
-              />
-              <Input
-                type="number"
-                placeholder="Quantidade"
-                value={component.quantity}
-                onChange={(e) =>
-                  handleNestedChange(
-                    "additionalComponents",
-                    `${index}.quantity`,
-                    e.target.value,
-                  )
-                }
-              />
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => removeComponent(index)}
-              className="h-10 w-10"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        ))}
       </div>
     </div>
   );
