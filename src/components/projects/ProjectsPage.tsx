@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { Download } from "lucide-react";
 import { downloadProjectReport } from "./DownloadReport";
 
 interface Project {
@@ -183,7 +184,7 @@ const ProjectsPage = () => {
             </TabsList>
 
             <TabsContent value="em-andamento" className="mt-4">
-              <div className="space-y-4">
+              <div className="max-h-[500px] overflow-y-auto space-y-4">
                 {activeProjects.map((project) => (
                   <div
                     key={project.id}
@@ -265,7 +266,7 @@ const ProjectsPage = () => {
             </TabsContent>
 
             <TabsContent value="concluidos" className="mt-4">
-              <div className="space-y-4">
+              <div className="max-h-[500px] overflow-y-auto space-y-4">
                 {completedProjects.length === 0 ? (
                   <div className="text-center text-gray-500 py-8">
                     Nenhum projeto concluído
@@ -294,12 +295,14 @@ const ProjectsPage = () => {
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-2">
-                          <button
+                          <Button
                             onClick={() => downloadProjectReport(project)}
-                            className="text-sm text-blue-600 hover:text-blue-800"
+                            className="bg-blue-900 text-white hover:bg-blue-800"
+                            size="sm"
                           >
-                            Baixar Relatório
-                          </button>
+                            <Download className="h-4 w-4 mr-2" />
+                            Download Relatório
+                          </Button>
                         </div>
                       </div>
                     </div>

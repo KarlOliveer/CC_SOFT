@@ -4,7 +4,13 @@ import ProjectReport from "./ProjectReport";
 
 export const downloadProjectReport = async (project: any) => {
   try {
-    const blob = await pdf(<ProjectReport project={project} />).toBlob();
+    const blob = await pdf(
+      <ProjectReport 
+        project={project} 
+        specs={project.hardwareSpecs} 
+        boards={project.boards} 
+      />
+    ).toBlob();
     const fileName = `${project.title.toLowerCase().replace(/ /g, "-")}-report.pdf`;
     const link = document.createElement("a");
     link.href = window.URL.createObjectURL(blob);
