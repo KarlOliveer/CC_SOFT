@@ -22,6 +22,7 @@ interface NewUserDialogProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: UserFormData | Partial<User>) => void;
   editingUser?: User;
+  currentUsername?: string;
 }
 
 const SECTIONS = [
@@ -39,37 +40,76 @@ const NewUserDialog = ({
   onOpenChange,
   onSubmit,
   editingUser,
+  currentUsername,
 }: NewUserDialogProps) => {
   const [formData, setFormData] = React.useState<UserFormData>({
     username: "",
-    password: "",
     role: "Electrónica",
     permissions: [],
   });
+  const [usernameError, setUsernameError] = React.useState("");
+  const [newPassword, setNewPassword] = React.useState("");
+  const [confirmPassword, setConfirmPassword] = React.useState("");
+  const [passwordError, setPasswordError] = React.useState("");
 
   React.useEffect(() => {
     if (editingUser) {
       setFormData({
         username: editingUser.username,
-        password: "",
         role: editingUser.role,
         permissions: editingUser.permissions,
       });
     } else {
       setFormData({
         username: "",
-        password: "",
         role: "Electrónica",
         permissions: [],
       });
     }
+    setUsernameError("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setPasswordError("");
   }, [editingUser]);
+
+  const validateUsername = (username: string): boolean => {
+    const usernamePattern = /^[a-z]+\.[a-z]+$/;
+    if (!usernamePattern.test(username)) {
+      setUsernameError(
+        "O nome de usuário deve estar no formato nome.sobrenome (tudo em minúsculas)",
+      );
+      return false;
+    }
+    setUsernameError("");
+    return true;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate fields
+    if (!editingUser) {
+      const isUsernameValid = validateUsername(formData.username);
+      if (!isUsernameValid) {
+        return;
+      }
+    }
+
+    // Validate password if provided for editing user
+    if (editingUser && newPassword) {
+      if (newPassword.length < 6) {
+        setPasswordError("A senha deve ter pelo menos 6 caracteres.");
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        setPasswordError("As senhas não coincidem.");
+        return;
+      }
+    }
+
     if (editingUser) {
       const changes: Partial<User> = {};
-      if (formData.password) changes.password = formData.password;
       if (formData.role !== editingUser.role) changes.role = formData.role;
       if (
         JSON.stringify(formData.permissions) !==
@@ -77,9 +117,28 @@ const NewUserDialog = ({
       ) {
         changes.permissions = formData.permissions;
       }
+
+      // Add password to changes if provided
+      if (newPassword) {
+        changes.password = newPassword;
+        changes.passwordChanged = true;
+      }
+
       onSubmit(changes);
     } else {
-      onSubmit(formData);
+      // Format display name from username
+      const nameParts = formData.username.split(".");
+      const displayName = nameParts
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" ");
+
+      onSubmit({
+        ...formData,
+        displayName,
+        password: "mcmsystems",
+        passwordChanged: false,
+        emailSet: false,
+      });
     }
   };
 
@@ -165,25 +224,33 @@ const NewUserDialog = ({
             <Input
               placeholder="nome.sobrenome"
               value={formData.username}
-              onChange={(e) =>
-                setFormData({ ...formData, username: e.target.value })
-              }
+              onChange={(e) => {
+                const value = e.target.value.toLowerCase();
+                setFormData({ ...formData, username: value });
+                if (!editingUser && value) {
+                  validateUsername(value);
+                }
+              }}
               disabled={!!editingUser}
             />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              {editingUser ? "Nova Senha (opcional)" : "Senha"}
-            </label>
-            <Input
-              type="password"
-              placeholder="Senha"
-              value={formData.password}
-              onChange={(e) =>
-                setFormData({ ...formData, password: e.target.value })
-              }
-            />
+            {usernameError && (
+              <p className="text-sm text-red-500">{usernameError}</p>
+            )}
+            {!editingUser && (
+              <p className="text-xs text-gray-500 mt-1">
+                Formato obrigatório: nome.sobrenome (ex: joao.silva)
+              </p>
+            )}
+            {editingUser && (
+              <p className="text-xs text-gray-500 mt-1">
+                Nome de exibição:{" "}
+                {editingUser.displayName ||
+                  formData.username
+                    .split(".")
+                    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+                    .join(" ")}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -207,6 +274,33 @@ const NewUserDialog = ({
               </SelectContent>
             </Select>
           </div>
+
+          {editingUser && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Nova Senha (opcional)
+              </label>
+              <Input
+                type="password"
+                placeholder="Digite a nova senha"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+              <Input
+                type="password"
+                placeholder="Confirme a nova senha"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="mt-2"
+              />
+              {passwordError && (
+                <p className="text-sm text-red-500">{passwordError}</p>
+              )}
+              <p className="text-xs text-gray-500 mt-1">
+                Deixe em branco para manter a senha atual
+              </p>
+            </div>
+          )}
 
           <div className="space-y-4">
             <label className="text-sm font-medium">Permissões</label>

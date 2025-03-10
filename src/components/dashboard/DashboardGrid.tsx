@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import PendingSection from "./PendingSection";
 import StatsCard from "./StatsCard";
 import { Package, FileText, TestTube, MessageSquare } from "lucide-react";
+import { useDashboardStats } from "./DashboardStats";
 
 interface DashboardGridProps {
   onProjectClick?: (id: string) => void;
@@ -28,6 +29,7 @@ const DashboardGrid = ({
   onProjectClick = () => {},
   onInventoryClick = () => {},
 }: DashboardGridProps) => {
+  const stats = useDashboardStats();
   return (
     <motion.div
       initial="hidden"
@@ -51,22 +53,22 @@ const DashboardGrid = ({
           <StatsCard
             icon={<FileText className="h-6 w-6" />}
             title="Projetos Ativos"
-            value={12}
+            value={stats.activeProjects}
           />
           <StatsCard
             icon={<Package className="h-6 w-6" />}
             title="Itens com Baixo Estoque"
-            value={3}
+            value={stats.lowStockItems}
           />
           <StatsCard
             icon={<TestTube className="h-6 w-6" />}
             title="Testes Pendentes"
-            value={5}
+            value={stats.pendingTests}
           />
           <StatsCard
             icon={<MessageSquare className="h-6 w-6" />}
             title="Pedidos em Aberto"
-            value={8}
+            value={stats.openOrders}
           />
         </motion.div>
 

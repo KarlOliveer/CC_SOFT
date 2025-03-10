@@ -11,7 +11,9 @@ import {
   Truck,
   ClipboardCheck,
   Users,
+  User,
 } from "lucide-react";
+import UserProfileDialog from "@/components/profile/UserProfileDialog";
 
 // Importa a imagem que está em src/assets/mcm_logo.png
 import logo from "@/assets/mcm_logo.png";
@@ -32,6 +34,25 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const username = localStorage.getItem("user");
   const isAdmin = username === "admin.admin";
+  const [profileDialogOpen, setProfileDialogOpen] = React.useState(false);
+  const [displayName, setDisplayName] = React.useState("");
+
+  React.useEffect(() => {
+    if (username) {
+      const users = JSON.parse(localStorage.getItem("users") || "[]");
+      const user = users.find((u: any) => u.username === username);
+      if (user && user.displayName) {
+        setDisplayName(user.displayName);
+      } else if (username) {
+        // Format username as display name
+        const formattedName = username
+          .split(".")
+          .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+          .join(" ");
+        setDisplayName(formattedName);
+      }
+    }
+  }, [username]);
 
   const handleLogout = () => {
     localStorage.removeItem("isAuthenticated");
@@ -121,12 +142,28 @@ const Sidebar = () => {
       {/* Secção de utilizador */}
       <div className="mt-auto p-4 border-t border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">{username}</span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex items-center gap-2 p-2"
+              onClick={() => setProfileDialogOpen(true)}
+            >
+              <User className="h-4 w-4" />
+              <span className="text-sm font-medium">{displayName}</span>
+            </Button>
+          </div>
           <Button variant="ghost" size="sm" onClick={handleLogout}>
             Sair
           </Button>
         </div>
       </div>
+
+      {/* User Profile Dialog */}
+      <UserProfileDialog
+        open={profileDialogOpen}
+        onOpenChange={setProfileDialogOpen}
+      />
     </div>
   );
 };

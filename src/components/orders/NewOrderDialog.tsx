@@ -97,7 +97,15 @@ const NewOrderDialog = ({
               <SelectContent>
                 {users.map((user: any) => (
                   <SelectItem key={user.username} value={user.username}>
-                    {user.username} ({user.role})
+                    {user.displayName ||
+                      user.username
+                        .split(".")
+                        .map(
+                          (part) =>
+                            part.charAt(0).toUpperCase() + part.slice(1),
+                        )
+                        .join(" ")}{" "}
+                    ({user.role})
                   </SelectItem>
                 ))}
               </SelectContent>

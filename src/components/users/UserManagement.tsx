@@ -22,16 +22,25 @@ const UserManagement = () => {
   const [editingUser, setEditingUser] = React.useState<string | null>(null);
   const [userToDelete, setUserToDelete] = React.useState<string | null>(null);
   const currentUsername = localStorage.getItem("user");
+  const isAdmin = currentUsername === "admin.admin";
 
   const handleCreateUser = (userData: User) => {
-    const updatedUsers = [...users, userData];
+    // New user with default values
+    const newUser = {
+      ...userData,
+      password: "mcmsystems",
+      passwordChanged: false,
+      emailSet: false,
+    };
+
+    const updatedUsers = [...users, newUser];
     setUsers(updatedUsers);
     localStorage.setItem("users", JSON.stringify(updatedUsers));
   };
 
   const handleEditUser = (username: string, updatedData: Partial<User>) => {
     const updatedUsers = users.map((user) =>
-      user.username === username ? { ...user, ...updatedData } : user
+      user.username === username ? { ...user, ...updatedData } : user,
     );
     setUsers(updatedUsers);
     localStorage.setItem("users", JSON.stringify(updatedUsers));
@@ -47,7 +56,7 @@ const UserManagement = () => {
   const confirmDelete = () => {
     if (userToDelete) {
       const updatedUsers = users.filter(
-        (user) => user.username !== userToDelete
+        (user) => user.username !== userToDelete,
       );
       setUsers(updatedUsers);
       localStorage.setItem("users", JSON.stringify(updatedUsers));
@@ -86,7 +95,7 @@ const UserManagement = () => {
 
       <div className="space-y-4">
         {users
-          .filter((user) => user.username !== "admin.admin")
+          .filter((user) => (isAdmin ? true : user.username !== "admin.admin"))
           .map((user) => (
             <div
               key={user.username}
@@ -95,8 +104,13 @@ const UserManagement = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    {user.username}
+                    {user.displayName || user.username}
                   </h3>
+                  {user.email && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {user.email}
+                    </p>
+                  )}
                   <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">
                     {user.role}
                   </p>
@@ -117,13 +131,15 @@ const UserManagement = () => {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setEditingUser(user.username)}
-                  >
-                    Editar
-                  </Button>
+                  {(user.username !== "admin.admin" || isAdmin) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingUser(user.username)}
+                    >
+                      Editar
+                    </Button>
+                  )}
                   <Button
                     variant="destructive"
                     size="sm"
@@ -184,6 +200,7 @@ const UserManagement = () => {
             ? users.find((u) => u.username === editingUser)
             : undefined
         }
+        currentUsername={currentUsername}
       />
     </div>
   );

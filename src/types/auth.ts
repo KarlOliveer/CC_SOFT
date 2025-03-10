@@ -1,5 +1,8 @@
 export interface User {
   username: string;
+  email?: string;
+  displayName?: string;
+  profileImage?: string;
   role:
     | "Electrónica"
     | "Elétrica"
@@ -8,6 +11,8 @@ export interface User {
     | "Software"
     | "Gestão";
   permissions: Permission[];
+  passwordChanged?: boolean;
+  emailSet?: boolean;
 }
 
 export type Permission =
@@ -29,7 +34,6 @@ export type Permission =
 
 export interface UserFormData {
   username: string;
-  password: string;
   role: User["role"];
   permissions: Permission[];
 }

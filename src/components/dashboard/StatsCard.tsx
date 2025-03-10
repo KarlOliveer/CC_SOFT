@@ -8,7 +8,7 @@ interface StatsCardProps {
   value: number;
 }
 
-const StatsCard = ({ icon, title, value }: StatsCardProps) => {
+const StatsCard = ({ icon, title, value = 0 }: StatsCardProps) => {
   return (
     <motion.div
       whileHover={{ scale: 1.02 }}
