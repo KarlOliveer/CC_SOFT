@@ -149,8 +149,38 @@ const Sidebar = () => {
               className="flex items-center gap-2 p-2"
               onClick={() => setProfileDialogOpen(true)}
             >
-              <User className="h-4 w-4" />
-              <span className="text-sm font-medium">{displayName}</span>
+              <div className="flex items-center gap-2">
+                <div className="relative h-6 w-6 overflow-hidden rounded-full">
+                  {(() => {
+                    const users = JSON.parse(
+                      localStorage.getItem("users") || "[]",
+                    );
+                    const user = users.find(
+                      (u: any) => u.username === username,
+                    );
+                    if (user?.profileImage) {
+                      return (
+                        <img
+                          src={user.profileImage}
+                          alt={displayName}
+                          className="h-full w-full object-cover"
+                        />
+                      );
+                    } else {
+                      return (
+                        <div className="flex h-full w-full items-center justify-center bg-blue-500 text-xs text-white">
+                          {displayName
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .toUpperCase()}
+                        </div>
+                      );
+                    }
+                  })()}
+                </div>
+                <span className="text-sm font-medium">{displayName}</span>
+              </div>
             </Button>
           </div>
           <Button variant="ghost" size="sm" onClick={handleLogout}>
