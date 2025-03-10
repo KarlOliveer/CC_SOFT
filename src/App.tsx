@@ -7,6 +7,7 @@ import OrdersPage from "./components/orders/OrdersPage";
 import TestsPage from "./components/tests/TestsPage";
 import Layout from "./components/layout/Layout";
 import LoginForm from "./components/auth/LoginForm";
+import ResetPassword from "./components/auth/ResetPassword";
 import PrivateRoute from "./components/auth/PrivateRoute";
 import UserManagement from "./components/users/UserManagement";
 import routes from "tempo-routes";
@@ -16,6 +17,7 @@ function App() {
     <Suspense fallback={<p>Loading...</p>}>
       <Routes>
         <Route path="/login" element={<LoginForm />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         <Route
           path="/"

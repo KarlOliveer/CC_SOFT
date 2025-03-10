@@ -170,7 +170,7 @@ export default function LoginForm() {
     navigate("/");
   };
 
-  const handleForgotPassword = () => {
+  const handleForgotPassword = async () => {
     if (!forgotUsername) {
       setForgotPasswordError("Por favor, digite seu nome de usuário.");
       return;
@@ -191,10 +191,34 @@ export default function LoginForm() {
       return;
     }
 
-    // In a real app, we would send an email here
-    // For this demo, we'll just show a success message
-    setResetEmailSent(true);
-    setForgotPasswordError("");
+    try {
+      // In a real app with a backend, this would generate a token and send an email
+      // For this demo, we'll simulate sending an email
+      const resetToken = Math.random().toString(36).substring(2, 15);
+      const resetLink = `${window.location.origin}/reset-password?token=${resetToken}&username=${forgotUsername}`;
+
+      // Store the token in localStorage (in a real app, this would be stored in a database)
+      const resetTokens = JSON.parse(
+        localStorage.getItem("resetTokens") || "{}",
+      );
+      resetTokens[forgotUsername] = {
+        token: resetToken,
+        expires: new Date(Date.now() + 3600000).toISOString(), // 1 hour expiration
+      };
+      localStorage.setItem("resetTokens", JSON.stringify(resetTokens));
+
+      // Import is inside the function to avoid circular dependencies
+      const { sendPasswordResetEmail } = await import("@/lib/email");
+      await sendPasswordResetEmail(user.email, forgotUsername, resetLink);
+
+      setResetEmailSent(true);
+      setForgotPasswordError("");
+    } catch (error) {
+      console.error("Error sending password reset email:", error);
+      setForgotPasswordError(
+        "Ocorreu um erro ao enviar o e-mail. Por favor, tente novamente.",
+      );
+    }
   };
 
   return (

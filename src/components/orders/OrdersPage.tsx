@@ -64,6 +64,14 @@ const UserOrderGroup = ({
 }) => {
   const [isExpanded, setIsExpanded] = React.useState(false);
 
+  // Format user ID for display
+  const displayName = userId.includes(".")
+    ? userId
+        .split(".")
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" ")
+    : userId;
+
   return (
     <div className="border rounded-lg p-4 bg-white dark:bg-gray-800">
       <div
@@ -71,7 +79,7 @@ const UserOrderGroup = ({
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <h3 className="text-lg font-semibold border-b pb-2">
-          Pedidos de {userId} ({userOrders.length})
+          Pedidos de {displayName} ({userOrders.length})
         </h3>
         <Button variant="ghost" size="sm">
           {isExpanded ? (
@@ -121,6 +129,14 @@ const OrderCard = ({
   onDelete: (id: string) => void;
   getFolderColorClass: (color: string) => string;
 }) => {
+  // Format user ID for display
+  const displayName = order.userId.includes(".")
+    ? order.userId
+        .split(".")
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" ")
+    : order.userId;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -131,7 +147,7 @@ const OrderCard = ({
       <div className="flex justify-between items-start">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2 flex-wrap">
-            <h3 className="text-base font-semibold">{order.userId}</h3>
+            <h3 className="text-base font-semibold">{displayName}</h3>
             <span
               className={`px-2 py-1 rounded-full text-xs font-medium ${order.status === "Concluído" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}
             >
