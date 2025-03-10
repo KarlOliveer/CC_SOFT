@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Folder } from "lucide-react";
 
 interface Material {
   name: string;
@@ -26,16 +26,21 @@ interface NewOrderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: any) => void;
+  folders?: Array<{ id: string; name: string; color: string }>;
 }
 
 const NewOrderDialog = ({
   open,
   onOpenChange,
   onSubmit,
+  folders = [],
 }: NewOrderDialogProps) => {
   const [selectedUser, setSelectedUser] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [materials, setMaterials] = React.useState<Material[]>([]);
+  const [selectedFolder, setSelectedFolder] = React.useState<string | null>(
+    null,
+  );
 
   // Get users from localStorage
   const users = JSON.parse(localStorage.getItem("users") || "[]");
@@ -70,6 +75,7 @@ const NewOrderDialog = ({
       materials,
       status: "Pendente",
       date: new Date().toISOString(),
+      folderId: selectedFolder,
     });
     onOpenChange(false);
   };
@@ -108,7 +114,30 @@ const NewOrderDialog = ({
             />
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Pasta</label>
+            <Select
+              value={selectedFolder || "none"}
+              onValueChange={setSelectedFolder}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione uma pasta (opcional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Sem pasta</SelectItem>
+                {folders.map((folder) => (
+                  <SelectItem key={folder.id} value={folder.id}>
+                    <div className="flex items-center gap-2">
+                      <Folder className="h-4 w-4" />
+                      {folder.name}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-4 mt-4">
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium">Materiais</label>
               <Button
