@@ -256,6 +256,7 @@ const HardwareSpecsForm = ({
             value={specs.motherboard}
             options={savedModels.motherboard}
             onChange={(e) => handleChange("motherboard", e.target.value)}
+            onDelete={(value) => handleModelDelete("motherboard", value)}
           />
         </div>
 
@@ -269,6 +270,7 @@ const HardwareSpecsForm = ({
               onChange={(e) =>
                 handleNestedChange("ram", "model", e.target.value)
               }
+              onDelete={(value) => handleModelDelete("ram", value)}
             />
           </div>
           <div>
@@ -294,6 +296,7 @@ const HardwareSpecsForm = ({
               onChange={(e) =>
                 handleNestedChange("ssd", "model", e.target.value)
               }
+              onDelete={(value) => handleModelDelete("ssd", value)}
             />
           </div>
           <div>
@@ -340,6 +343,7 @@ const HardwareSpecsForm = ({
                   onChange={(e) =>
                     handleNestedChange("ethernetCard", "model", e.target.value)
                   }
+                  onDelete={(value) => handleModelDelete("ethernetCard", value)}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -402,6 +406,7 @@ const HardwareSpecsForm = ({
                 onChange={(e) =>
                   handleNestedChange("wifiAdapter", "model", e.target.value)
                 }
+                onDelete={(value) => handleModelDelete("wifiAdapter", value)}
               />
             </div>
           )}
@@ -434,6 +439,9 @@ const HardwareSpecsForm = ({
                   options={savedModels.networkSwitch}
                   onChange={(e) =>
                     handleNestedChange("networkSwitch", "model", e.target.value)
+                  }
+                  onDelete={(value) =>
+                    handleModelDelete("networkSwitch", value)
                   }
                 />
               </div>
@@ -468,6 +476,7 @@ const HardwareSpecsForm = ({
                   onChange={(e) =>
                     handleNestedChange("securityPen", "model", e.target.value)
                   }
+                  onDelete={(value) => handleModelDelete("securityPen", value)}
                 />
               </div>
               <div>
@@ -511,6 +520,7 @@ const HardwareSpecsForm = ({
                     onChange={(e) =>
                       handleNestedChange("mioCard", "model", e.target.value)
                     }
+                    onDelete={(value) => handleModelDelete("mioCard", value)}
                   />
                 </div>
                 <div className="flex items-center space-x-2">
@@ -559,6 +569,9 @@ const HardwareSpecsForm = ({
                     options={savedModels.shentekCard}
                     onChange={(e) =>
                       handleNestedChange("shentekCard", "model", e.target.value)
+                    }
+                    onDelete={(value) =>
+                      handleModelDelete("shentekCard", value)
                     }
                   />
                 </div>
@@ -620,6 +633,7 @@ const HardwareSpecsForm = ({
             value={specs.powerSupply}
             options={savedModels.powerSupply}
             onChange={(e) => handleChange("powerSupply", e.target.value)}
+            onDelete={(value) => handleModelDelete("powerSupply", value)}
           />
         </div>
       </div>
