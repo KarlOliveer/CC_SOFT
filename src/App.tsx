@@ -4,6 +4,7 @@ import Home from "./components/home";
 import ProjectsPage from "./components/projects/ProjectsPage";
 import MaterialsPage from "./components/materials/MaterialPage";
 import OrdersPage from "./components/orders/OrdersPage";
+import TestsPage from "./components/tests/TestsPage";
 import Layout from "./components/layout/Layout";
 import LoginForm from "./components/auth/LoginForm";
 import PrivateRoute from "./components/auth/PrivateRoute";
@@ -54,7 +55,7 @@ function App() {
           element={
             <PrivateRoute>
               <Layout>
-                <Home />
+                <TestsPage />
               </Layout>
             </PrivateRoute>
           }

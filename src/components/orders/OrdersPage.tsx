@@ -406,7 +406,7 @@ const OrdersPage = () => {
   const filteredOrders = orders.filter((order) => {
     // Filter by folder
     const folderMatch =
-      activeFolder === null ? !order.folderId : order.folderId === activeFolder;
+      activeFolder === null ? true : order.folderId === activeFolder;
 
     // Filter by status
     const statusMatch =
