@@ -15,6 +15,8 @@ interface EmailOptions {
   subject: string;
   text?: string;
   html?: string;
+  username?: string;
+  reset_link?: string;
 }
 
 // Email configuration
@@ -42,8 +44,13 @@ export const sendEmail = async (options: EmailOptions): Promise<boolean> => {
       message: options.text || options.html,
       from_name: "MCM Systems",
       reply_to: emailConfig.auth.user,
+      // Parâmetros para o template HTML
+      username: options.username || "Usuário",
+      reset_link: options.reset_link || "",
+      email_subject: options.subject,
     };
 
+    console.log("Enviando e-mail com sendEmail:", options.to);
     const response = await sendEmailWithEmailJS(templateParams);
     console.log(`Email sent successfully to ${options.to}`, response);
     return true;
@@ -63,41 +70,16 @@ export const sendPasswordResetEmail = async (
 ): Promise<boolean> => {
   const subject = "Recuperação de Senha - MCM Gestor de Projetos";
 
-  const htmlContent = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #333;">Recuperação de Senha</h2>
-      <p>Olá,</p>
-      <p>Recebemos uma solicitação para redefinir a senha da sua conta.</p>
-      <p>Para redefinir sua senha, clique no link abaixo:</p>
-      <p>
-        <a href="${resetLink}" style="display: inline-block; background-color: #0066cc; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">
-          Redefinir Senha
-        </a>
-      </p>
-      <p>Se você não solicitou a redefinição de senha, ignore este e-mail.</p>
-      <p>Atenciosamente,<br>Equipe MCM Gestor de Projetos</p>
-    </div>
-  `;
+  // Não precisamos mais definir o HTML aqui, pois usamos o template do EmailJS
 
-  const textContent = `
-    Recuperação de Senha - MCM Gestor de Projetos
-    
-    Olá,
-    
-    Recebemos uma solicitação para redefinir a senha da sua conta.
-    
-    Para redefinir sua senha, acesse o link: ${resetLink}
-    
-    Se você não solicitou a redefinição de senha, ignore este e-mail.
-    
-    Atenciosamente,
-    Equipe MCM Gestor de Projetos
-  `;
+  // Não precisamos mais definir o texto aqui, pois usamos o template do EmailJS
 
   return sendEmail({
     to: email,
     subject,
-    text: textContent,
-    html: htmlContent,
+    text: "Recuperação de senha",
+    html: "<p>Recuperação de senha</p>",
+    username,
+    reset_link: resetLink,
   });
 };

@@ -207,23 +207,32 @@ export default function LoginForm() {
       };
       localStorage.setItem("resetTokens", JSON.stringify(resetTokens));
 
-      // Import is inside the function to avoid circular dependencies
-      const { sendPasswordResetEmail } = await import("@/lib/email");
-      const emailSent = await sendPasswordResetEmail(
-        user.email,
-        forgotUsername,
-        resetLink,
-      );
+      try {
+        // Import is inside the function to avoid circular dependencies
+        const { sendPasswordResetEmail } = await import("@/lib/email");
+        console.log("Tentando enviar e-mail para:", user.email);
+        const emailSent = await sendPasswordResetEmail(
+          user.email,
+          forgotUsername,
+          resetLink,
+        );
 
-      if (!emailSent) {
+        if (!emailSent) {
+          setForgotPasswordError(
+            "Ocorreu um erro ao enviar o e-mail. Por favor, tente novamente.",
+          );
+          return;
+        }
+
+        setResetEmailSent(true);
+        setForgotPasswordError("");
+      } catch (error) {
+        console.error("Erro detalhado ao enviar e-mail:", error);
         setForgotPasswordError(
-          "Ocorreu um erro ao enviar o e-mail. Por favor, tente novamente.",
+          "Erro ao conectar com o serviço de e-mail. Por favor, tente novamente.",
         );
         return;
       }
-
-      setResetEmailSent(true);
-      setForgotPasswordError("");
     } catch (error) {
       console.error("Error sending password reset email:", error);
       setForgotPasswordError(
