@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { downloadProjectReport } from "./DownloadReport";
+import { projectService } from "@/lib/supabase-client";
+import { supabase } from "@/lib/supabase-client";
 
 interface Project {
   id: string;
@@ -26,97 +28,223 @@ interface Project {
 }
 
 const ProjectsPage = () => {
-  const [editingProject, setEditingProject] = React.useState<string | null>(null);
+  const [editingProject, setEditingProject] = React.useState<string | null>(
+    null,
+  );
   const [activeProjects, setActiveProjects] = React.useState<Project[]>([]);
-  const [completedProjects, setCompletedProjects] = React.useState<Project[]>([]);
+  const [completedProjects, setCompletedProjects] = React.useState<Project[]>(
+    [],
+  );
   const [isLoading, setIsLoading] = React.useState(true);
 
-  // Load projects from localStorage
-  const loadProjects = () => {
-    try {
-      const storedActive = localStorage.getItem("activeProjects");
-      const storedCompleted = localStorage.getItem("completedProjects");
-      if (storedActive) {
-        setActiveProjects(JSON.parse(storedActive));
-      }
-      if (storedCompleted) {
-        setCompletedProjects(JSON.parse(storedCompleted));
-      }
-    } catch (error) {
-      console.error("Error reading from localStorage:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Load projects from Supabase
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Carregar dados do Supabase
+        try {
+          const projectsData = await projectService.getProjects();
+          if (projectsData && projectsData.length > 0) {
+            const active = projectsData.filter((p) => p.status !== "Concluído");
+            const completed = projectsData.filter(
+              (p) => p.status === "Concluído",
+            );
+            setActiveProjects(active);
+            setCompletedProjects(completed);
+          } else {
+            // Fallback para localStorage
+            loadFromLocalStorage();
+          }
+        } catch (dbError) {
+          console.error("Erro ao carregar projetos do Supabase:", dbError);
 
-  // Save projects to localStorage
-  const saveProjects = (active: Project[], completed: Project[]) => {
+          // Fallback para localStorage
+          loadFromLocalStorage();
+        }
+      } catch (error) {
+        console.error("Erro ao carregar projetos:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const loadFromLocalStorage = () => {
+      try {
+        const storedActive = localStorage.getItem("activeProjects");
+        const storedCompleted = localStorage.getItem("completedProjects");
+        if (storedActive) {
+          setActiveProjects(JSON.parse(storedActive));
+        }
+        if (storedCompleted) {
+          setCompletedProjects(JSON.parse(storedCompleted));
+        }
+      } catch (error) {
+        console.error("Error reading from localStorage:", error);
+      }
+    };
+
+    fetchData();
+
+    // Configurar atualização periódica
+    const refreshInterval = setInterval(fetchData, 10000); // Atualizar a cada 10 segundos
+
+    // Atualizar quando a página ficar visível
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchData();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(refreshInterval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
+  // Save projects to Supabase and localStorage
+  const saveProjects = async (active: Project[], completed: Project[]) => {
     try {
+      // Salvar no Supabase
+      try {
+        // Salvar projetos ativos
+        for (const project of active) {
+          try {
+            const { data } = await supabase
+              .from("projects")
+              .select("id")
+              .eq("id", project.id)
+              .single();
+
+            if (data) {
+              // Atualizar projeto existente
+              await projectService.updateProject(project.id, project);
+            } else {
+              // Criar novo projeto
+              await projectService.createProject(project);
+            }
+          } catch (projectError) {
+            console.error(
+              `Erro ao salvar projeto ${project.id}:`,
+              projectError,
+            );
+            // Tentar inserir diretamente
+            await supabase
+              .from("projects")
+              .upsert(project, { onConflict: "id" });
+          }
+        }
+
+        // Salvar projetos concluídos
+        for (const project of completed) {
+          try {
+            const { data } = await supabase
+              .from("projects")
+              .select("id")
+              .eq("id", project.id)
+              .single();
+
+            if (data) {
+              // Atualizar projeto existente
+              await projectService.updateProject(project.id, project);
+            } else {
+              // Criar novo projeto
+              await projectService.createProject(project);
+            }
+          } catch (projectError) {
+            console.error(
+              `Erro ao salvar projeto ${project.id}:`,
+              projectError,
+            );
+            // Tentar inserir diretamente
+            await supabase
+              .from("projects")
+              .upsert(project, { onConflict: "id" });
+          }
+        }
+      } catch (dbError) {
+        console.error("Erro ao salvar projetos no Supabase:", dbError);
+      }
+
+      // Sempre salvar no localStorage como fallback
       localStorage.setItem("activeProjects", JSON.stringify(active));
       localStorage.setItem("completedProjects", JSON.stringify(completed));
       setActiveProjects(active);
       setCompletedProjects(completed);
     } catch (error) {
-      console.error("Error writing to localStorage:", error);
+      console.error("Error saving projects:", error);
     }
   };
 
-  // Load on mount and when tab becomes visible
-  React.useEffect(() => {
-    loadProjects();
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        loadProjects();
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, []);
-
   // Handle project completion
-  const handleProjectComplete = (projectId: string) => {
+  const handleProjectComplete = async (projectId: string) => {
     const project = activeProjects.find((p) => p.id === projectId);
     if (project) {
       const updatedProject = { ...project, status: "Concluído" as const };
       const newActive = activeProjects.filter((p) => p.id !== projectId);
       const newCompleted = [...completedProjects, updatedProject];
-      saveProjects(newActive, newCompleted);
+      await saveProjects(newActive, newCompleted);
     }
   };
 
   // Create or update a project
-  const handleNewProject = (data: Omit<Project, "id">) => {
+  const handleNewProject = async (data: Omit<Project, "id">) => {
     const newProject: Project = {
       id: Math.random().toString(36).slice(2, 9),
       ...data,
     };
     if (newProject.status === "Concluído") {
-      saveProjects(activeProjects, [...completedProjects, newProject]);
+      await saveProjects(activeProjects, [...completedProjects, newProject]);
     } else {
-      saveProjects([...activeProjects, newProject], completedProjects);
+      await saveProjects([...activeProjects, newProject], completedProjects);
     }
     setEditingProject(null);
   };
 
   // Edit an existing project
-  const handleEditProject = (projectId: string, data: Partial<Project>) => {
+  const handleEditProject = async (
+    projectId: string,
+    data: Partial<Project>,
+  ) => {
     const project = activeProjects.find((p) => p.id === projectId);
     if (project) {
       const updatedProject = { ...project, ...data };
       if (updatedProject.status === "Concluído") {
         const newActive = activeProjects.filter((p) => p.id !== projectId);
         const newCompleted = [...completedProjects, updatedProject];
-        saveProjects(newActive, newCompleted);
+        await saveProjects(newActive, newCompleted);
       } else {
         const newActive = activeProjects.map((p) =>
-          p.id === projectId ? updatedProject : p
+          p.id === projectId ? updatedProject : p,
         );
-        saveProjects(newActive, completedProjects);
+        await saveProjects(newActive, completedProjects);
       }
     }
     setEditingProject(null);
+  };
+
+  // Handle deleting a project
+  const handleDeleteProject = async (projectId: string) => {
+    try {
+      // Excluir do Supabase
+      try {
+        await projectService.deleteProject(projectId);
+      } catch (dbError) {
+        console.error("Erro ao excluir projeto do Supabase:", dbError);
+      }
+
+      // Atualizar estado e localStorage
+      const updatedActive = activeProjects.filter(
+        (project) => project.id !== projectId,
+      );
+      const updatedCompleted = completedProjects.filter(
+        (project) => project.id !== projectId,
+      );
+      await saveProjects(updatedActive, updatedCompleted);
+    } catch (error) {
+      console.error("Erro ao excluir projeto:", error);
+    }
   };
 
   // Sidebar categories
@@ -127,8 +255,10 @@ const ProjectsPage = () => {
     const typeLower = type.toLowerCase();
     return typeLower === "todos"
       ? activeProjects.length + completedProjects.length
-      : activeProjects.filter((p) => p.type.toLowerCase() === typeLower).length +
-          completedProjects.filter((p) => p.type.toLowerCase() === typeLower).length;
+      : activeProjects.filter((p) => p.type.toLowerCase() === typeLower)
+          .length +
+          completedProjects.filter((p) => p.type.toLowerCase() === typeLower)
+            .length;
   };
 
   if (isLoading) {
@@ -168,7 +298,9 @@ const ProjectsPage = () => {
               "
             >
               <span className="text-sm font-medium">{type}</span>
-              <span className="text-sm text-gray-500">{getCategoryCount(type)}</span>
+              <span className="text-sm text-gray-500">
+                {getCategoryCount(type)}
+              </span>
             </div>
           ))}
         </div>
@@ -197,25 +329,35 @@ const ProjectsPage = () => {
                     <div className="flex justify-between items-start">
                       <div>
                         <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-lg font-semibold">{project.title}</h3>
+                          <h3 className="text-lg font-semibold">
+                            {project.title}
+                          </h3>
                           <div
                             className={cn(
                               "px-2 py-1 rounded-full text-xs font-medium",
                               project.priority === "Alta"
                                 ? "bg-red-100 text-red-800"
                                 : project.priority === "Média"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-green-100 text-green-800"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-green-100 text-green-800",
                             )}
                           >
                             {project.priority}
                           </div>
                         </div>
-                        <div className="text-sm text-gray-500 mb-4">{project.type}</div>
+                        <div className="text-sm text-gray-500 mb-4">
+                          {project.type}
+                        </div>
                         <div className="space-y-2">
-                          <div className="text-sm">Data Limite: {project.dueDate}</div>
-                          <div className="text-sm">Tipo de Serviço: {project.serviceType}</div>
-                          <div className="text-sm text-gray-500">{project.description}</div>
+                          <div className="text-sm">
+                            Data Limite: {project.dueDate}
+                          </div>
+                          <div className="text-sm">
+                            Tipo de Serviço: {project.serviceType}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {project.description}
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -284,13 +426,23 @@ const ProjectsPage = () => {
                       <div className="flex justify-between items-start">
                         <div>
                           <div className="flex items-center gap-2 mb-2">
-                            <h3 className="text-lg font-semibold">{project.title}</h3>
+                            <h3 className="text-lg font-semibold">
+                              {project.title}
+                            </h3>
                           </div>
-                          <div className="text-sm text-gray-500 mb-4">{project.type}</div>
+                          <div className="text-sm text-gray-500 mb-4">
+                            {project.type}
+                          </div>
                           <div className="space-y-2">
-                            <div className="text-sm">Data Limite: {project.dueDate}</div>
-                            <div className="text-sm">Tipo de Serviço: {project.serviceType}</div>
-                            <div className="text-sm text-gray-500">{project.description}</div>
+                            <div className="text-sm">
+                              Data Limite: {project.dueDate}
+                            </div>
+                            <div className="text-sm">
+                              Tipo de Serviço: {project.serviceType}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {project.description}
+                            </div>
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-2">

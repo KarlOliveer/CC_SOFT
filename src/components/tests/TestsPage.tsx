@@ -4,6 +4,8 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { testService } from "@/lib/supabase-client";
+import { supabase } from "@/lib/supabase-client";
 import {
   Card,
   CardContent,
@@ -786,98 +788,245 @@ const TestsPage = () => {
     null,
   );
 
-  // Load tests from localStorage
+  // Load tests from Supabase
   React.useEffect(() => {
-    const storedTests = localStorage.getItem("tests");
-    if (storedTests) {
-      setTests(JSON.parse(storedTests));
-    } else {
-      // Add some sample tests if none exist
-      const sampleTests = [
-        {
-          id: "1",
-          title: "Teste de Calibração do Sensor de Temperatura",
-          description:
-            "Este teste verifica se o sensor de temperatura está calibrado corretamente e responde a mudanças de temperatura dentro das especificações.",
-          category: "Calibrador",
-          equipment: "Multímetro",
-          steps: [
-            {
-              id: "s1",
-              description:
-                "Conecte o multímetro aos terminais do sensor de temperatura.",
-              expectedResult: "O multímetro deve mostrar uma leitura estável.",
-              imageUrl:
-                "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=800&q=80",
-            },
-            {
-              id: "s2",
-              description:
-                "Aplique uma fonte de calor controlada (ex: 50°C) ao sensor.",
-              expectedResult:
-                "A leitura do multímetro deve mudar proporcionalmente à temperatura aplicada.",
-            },
-            {
-              id: "s3",
-              description:
-                "Verifique se a saída do sensor corresponde à tabela de calibração fornecida pelo fabricante.",
-              expectedResult:
-                "A saída deve estar dentro de ±2% do valor esperado para cada temperatura testada.",
-            },
-          ],
-          files: [
-            {
-              id: "f1",
-              name: "Tabela_Calibracao.pdf",
-              type: "application/pdf",
-              url: "#",
-              size: 245000,
-            },
-          ],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "2",
-          title: "Teste de Funcionamento da Placa RIO",
-          description:
-            "Este teste verifica todas as entradas e saídas da placa RIO para garantir que estão funcionando corretamente.",
-          category: "Placa RIO",
-          equipment: "Osciloscópio",
-          steps: [
-            {
-              id: "s1",
-              description:
-                "Conecte a alimentação à placa RIO e verifique se os LEDs de status acendem.",
-              expectedResult:
-                "Todos os LEDs de status devem acender na sequência correta.",
-            },
-            {
-              id: "s2",
-              description:
-                "Conecte o osciloscópio à saída digital 1 e aplique um sinal de teste.",
-              expectedResult:
-                "O sinal deve ser transmitido sem distorção e com a amplitude correta.",
-            },
-          ],
-          files: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ];
-      setTests(sampleTests);
-      localStorage.setItem("tests", JSON.stringify(sampleTests));
-    }
+    const fetchData = async () => {
+      try {
+        // Carregar dados do Supabase
+        try {
+          const testsData = await testService.getTests();
+          if (testsData && testsData.length > 0) {
+            setTests(testsData);
+          } else {
+            // Se não houver testes no Supabase, adicionar exemplos
+            const sampleTests = [
+              {
+                id: "1",
+                title: "Teste de Calibração do Sensor de Temperatura",
+                description:
+                  "Este teste verifica se o sensor de temperatura está calibrado corretamente e responde a mudanças de temperatura dentro das especificações.",
+                category: "Calibrador",
+                equipment: "Multímetro",
+                steps: [
+                  {
+                    id: "s1",
+                    description:
+                      "Conecte o multímetro aos terminais do sensor de temperatura.",
+                    expectedResult:
+                      "O multímetro deve mostrar uma leitura estável.",
+                    imageUrl:
+                      "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=800&q=80",
+                  },
+                  {
+                    id: "s2",
+                    description:
+                      "Aplique uma fonte de calor controlada (ex: 50°C) ao sensor.",
+                    expectedResult:
+                      "A leitura do multímetro deve mudar proporcionalmente à temperatura aplicada.",
+                  },
+                  {
+                    id: "s3",
+                    description:
+                      "Verifique se a saída do sensor corresponde à tabela de calibração fornecida pelo fabricante.",
+                    expectedResult:
+                      "A saída deve estar dentro de ±2% do valor esperado para cada temperatura testada.",
+                  },
+                ],
+                files: [
+                  {
+                    id: "f1",
+                    name: "Tabela_Calibracao.pdf",
+                    type: "application/pdf",
+                    url: "#",
+                    size: 245000,
+                  },
+                ],
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              },
+              {
+                id: "2",
+                title: "Teste de Funcionamento da Placa RIO",
+                description:
+                  "Este teste verifica todas as entradas e saídas da placa RIO para garantir que estão funcionando corretamente.",
+                category: "Placa RIO",
+                equipment: "Osciloscópio",
+                steps: [
+                  {
+                    id: "s1",
+                    description:
+                      "Conecte a alimentação à placa RIO e verifique se os LEDs de status acendem.",
+                    expectedResult:
+                      "Todos os LEDs de status devem acender na sequência correta.",
+                  },
+                  {
+                    id: "s2",
+                    description:
+                      "Conecte o osciloscópio à saída digital 1 e aplique um sinal de teste.",
+                    expectedResult:
+                      "O sinal deve ser transmitido sem distorção e com a amplitude correta.",
+                  },
+                ],
+                files: [],
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              },
+            ];
+
+            // Salvar exemplos no Supabase
+            for (const test of sampleTests) {
+              await testService.createTest(test);
+            }
+
+            setTests(sampleTests);
+          }
+        } catch (dbError) {
+          console.error("Erro ao carregar testes do Supabase:", dbError);
+
+          // Fallback para localStorage
+          const storedTests = localStorage.getItem("tests");
+          if (storedTests) {
+            setTests(JSON.parse(storedTests));
+          } else {
+            // Add some sample tests if none exist
+            const sampleTests = [
+              {
+                id: "1",
+                title: "Teste de Calibração do Sensor de Temperatura",
+                description:
+                  "Este teste verifica se o sensor de temperatura está calibrado corretamente e responde a mudanças de temperatura dentro das especificações.",
+                category: "Calibrador",
+                equipment: "Multímetro",
+                steps: [
+                  {
+                    id: "s1",
+                    description:
+                      "Conecte o multímetro aos terminais do sensor de temperatura.",
+                    expectedResult:
+                      "O multímetro deve mostrar uma leitura estável.",
+                    imageUrl:
+                      "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=800&q=80",
+                  },
+                  {
+                    id: "s2",
+                    description:
+                      "Aplique uma fonte de calor controlada (ex: 50°C) ao sensor.",
+                    expectedResult:
+                      "A leitura do multímetro deve mudar proporcionalmente à temperatura aplicada.",
+                  },
+                  {
+                    id: "s3",
+                    description:
+                      "Verifique se a saída do sensor corresponde à tabela de calibração fornecida pelo fabricante.",
+                    expectedResult:
+                      "A saída deve estar dentro de ±2% do valor esperado para cada temperatura testada.",
+                  },
+                ],
+                files: [
+                  {
+                    id: "f1",
+                    name: "Tabela_Calibracao.pdf",
+                    type: "application/pdf",
+                    url: "#",
+                    size: 245000,
+                  },
+                ],
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              },
+              {
+                id: "2",
+                title: "Teste de Funcionamento da Placa RIO",
+                description:
+                  "Este teste verifica todas as entradas e saídas da placa RIO para garantir que estão funcionando corretamente.",
+                category: "Placa RIO",
+                equipment: "Osciloscópio",
+                steps: [
+                  {
+                    id: "s1",
+                    description:
+                      "Conecte a alimentação à placa RIO e verifique se os LEDs de status acendem.",
+                    expectedResult:
+                      "Todos os LEDs de status devem acender na sequência correta.",
+                  },
+                  {
+                    id: "s2",
+                    description:
+                      "Conecte o osciloscópio à saída digital 1 e aplique um sinal de teste.",
+                    expectedResult:
+                      "O sinal deve ser transmitido sem distorção e com a amplitude correta.",
+                  },
+                ],
+                files: [],
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              },
+            ];
+            setTests(sampleTests);
+            localStorage.setItem("tests", JSON.stringify(sampleTests));
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao carregar testes:", error);
+      }
+    };
+
+    fetchData();
+
+    // Configurar atualização periódica
+    const refreshInterval = setInterval(fetchData, 10000); // Atualizar a cada 10 segundos
+
+    // Atualizar quando a página ficar visível
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchData();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(refreshInterval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
-  // Save tests to localStorage
-  const saveTests = (updatedTests: Test[]) => {
+  // Save tests to Supabase and localStorage
+  const saveTests = async (updatedTests: Test[]) => {
     setTests(updatedTests);
-    localStorage.setItem("tests", JSON.stringify(updatedTests));
+
+    try {
+      // Salvar no Supabase
+      try {
+        // Verificar se é uma adição, atualização ou exclusão
+        if (updatedTests.length > tests.length) {
+          // Novo teste adicionado
+          const newTest = updatedTests[updatedTests.length - 1];
+          await testService.createTest(newTest);
+        } else if (updatedTests.length < tests.length) {
+          // Teste excluído - já tratado em handleDeleteTest
+        } else {
+          // Possível atualização - verificar cada teste
+          for (const test of updatedTests) {
+            const oldTest = tests.find((t) => t.id === test.id);
+            if (oldTest && JSON.stringify(oldTest) !== JSON.stringify(test)) {
+              await testService.updateTest(test.id, test);
+            }
+          }
+        }
+      } catch (dbError) {
+        console.error("Erro ao salvar testes no Supabase:", dbError);
+      }
+
+      // Sempre salvar no localStorage como fallback
+      localStorage.setItem("tests", JSON.stringify(updatedTests));
+    } catch (error) {
+      console.error("Erro ao salvar testes:", error);
+    }
   };
 
   // Handle creating a new test
-  const handleCreateTest = (
+  const handleCreateTest = async (
     testData: Omit<Test, "id" | "createdAt" | "updatedAt">,
   ) => {
     const now = new Date().toISOString();
@@ -889,11 +1038,11 @@ const TestsPage = () => {
     };
 
     const updatedTests = [...tests, newTest];
-    saveTests(updatedTests);
+    await saveTests(updatedTests);
   };
 
   // Handle updating a test
-  const handleUpdateTest = (
+  const handleUpdateTest = async (
     testData: Omit<Test, "id" | "createdAt" | "updatedAt">,
   ) => {
     if (!selectedTest) return;
@@ -908,16 +1057,28 @@ const TestsPage = () => {
       test.id === selectedTest.id ? updatedTest : test,
     );
 
-    saveTests(updatedTests);
+    await saveTests(updatedTests);
     setSelectedTest(updatedTest);
   };
 
   // Handle deleting a test
-  const handleDeleteTest = (testId: string) => {
-    const updatedTests = tests.filter((test) => test.id !== testId);
-    saveTests(updatedTests);
-    setSelectedTest(null);
-    setTestToDelete(null);
+  const handleDeleteTest = async (testId: string) => {
+    try {
+      // Excluir do Supabase
+      try {
+        await testService.deleteTest(testId);
+      } catch (dbError) {
+        console.error("Erro ao excluir teste do Supabase:", dbError);
+      }
+
+      // Atualizar estado e localStorage
+      const updatedTests = tests.filter((test) => test.id !== testId);
+      await saveTests(updatedTests);
+      setSelectedTest(null);
+      setTestToDelete(null);
+    } catch (error) {
+      console.error("Erro ao excluir teste:", error);
+    }
   };
 
   // Filter tests based on search query and category

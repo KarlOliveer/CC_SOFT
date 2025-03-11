@@ -4,6 +4,8 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { User, Permission } from "@/types/auth";
+import { userService } from "@/lib/supabase-client";
+import { supabase } from "@/lib/supabase-client";
 import NewUserDialog from "./NewUserDialog";
 import {
   AlertDialog,
@@ -24,7 +26,7 @@ const UserManagement = () => {
   const currentUsername = localStorage.getItem("user");
   const isAdmin = currentUsername === "admin.admin";
 
-  const handleCreateUser = (userData: User) => {
+  const handleCreateUser = async (userData: User) => {
     // New user with default values
     const newUser = {
       ...userData,
@@ -33,17 +35,44 @@ const UserManagement = () => {
       emailSet: false,
     };
 
-    const updatedUsers = [...users, newUser];
-    setUsers(updatedUsers);
-    localStorage.setItem("users", JSON.stringify(updatedUsers));
+    try {
+      // Salvar no Supabase
+      try {
+        await userService.upsertUser(newUser);
+      } catch (dbError) {
+        console.error("Erro ao criar usuário no Supabase:", dbError);
+      }
+
+      // Atualizar estado e localStorage
+      const updatedUsers = [...users, newUser];
+      setUsers(updatedUsers);
+      localStorage.setItem("users", JSON.stringify(updatedUsers));
+    } catch (error) {
+      console.error("Erro ao criar usuário:", error);
+    }
   };
 
-  const handleEditUser = (username: string, updatedData: Partial<User>) => {
-    const updatedUsers = users.map((user) =>
-      user.username === username ? { ...user, ...updatedData } : user,
-    );
-    setUsers(updatedUsers);
-    localStorage.setItem("users", JSON.stringify(updatedUsers));
+  const handleEditUser = async (
+    username: string,
+    updatedData: Partial<User>,
+  ) => {
+    try {
+      // Atualizar no Supabase
+      try {
+        await userService.updateUser(username, updatedData);
+      } catch (dbError) {
+        console.error("Erro ao atualizar usuário no Supabase:", dbError);
+      }
+
+      // Atualizar estado e localStorage
+      const updatedUsers = users.map((user) =>
+        user.username === username ? { ...user, ...updatedData } : user,
+      );
+      setUsers(updatedUsers);
+      localStorage.setItem("users", JSON.stringify(updatedUsers));
+    } catch (error) {
+      console.error("Erro ao atualizar usuário:", error);
+    }
   };
 
   const handleDeleteUser = (username: string) => {
@@ -53,26 +82,72 @@ const UserManagement = () => {
     setUserToDelete(username);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (userToDelete) {
-      const updatedUsers = users.filter(
-        (user) => user.username !== userToDelete,
-      );
-      setUsers(updatedUsers);
-      localStorage.setItem("users", JSON.stringify(updatedUsers));
-      setUserToDelete(null);
+      try {
+        // Excluir do Supabase
+        try {
+          await userService.deleteUser(userToDelete);
+        } catch (dbError) {
+          console.error("Erro ao excluir usuário do Supabase:", dbError);
+        }
+
+        // Atualizar estado e localStorage
+        const updatedUsers = users.filter(
+          (user) => user.username !== userToDelete,
+        );
+        setUsers(updatedUsers);
+        localStorage.setItem("users", JSON.stringify(updatedUsers));
+        setUserToDelete(null);
+      } catch (error) {
+        console.error("Erro ao excluir usuário:", error);
+      }
     }
   };
 
   React.useEffect(() => {
-    const storedUsers = localStorage.getItem("users");
-    if (storedUsers) {
+    const fetchUsers = async () => {
       try {
-        setUsers(JSON.parse(storedUsers));
+        // Carregar usuários do Supabase
+        try {
+          const usersData = await userService.getUsers();
+          setUsers(usersData);
+        } catch (dbError) {
+          console.error("Erro ao carregar usuários do Supabase:", dbError);
+
+          // Fallback para localStorage
+          const storedUsers = localStorage.getItem("users");
+          if (storedUsers) {
+            try {
+              setUsers(JSON.parse(storedUsers));
+            } catch (error) {
+              console.error("Error parsing stored users:", error);
+            }
+          }
+        }
       } catch (error) {
-        console.error("Error parsing stored users:", error);
+        console.error("Erro ao carregar usuários:", error);
       }
-    }
+    };
+
+    fetchUsers();
+
+    // Configurar atualização periódica
+    const refreshInterval = setInterval(fetchUsers, 10000); // Atualizar a cada 10 segundos
+
+    // Atualizar quando a página ficar visível
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchUsers();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(refreshInterval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
   return (

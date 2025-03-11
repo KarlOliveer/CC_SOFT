@@ -3,6 +3,8 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { orderService } from "@/lib/supabase-client";
+import { supabase } from "@/lib/supabase-client";
 import {
   Plus,
   FolderPlus,
@@ -259,30 +261,118 @@ const OrdersPage = () => {
     React.useState(false);
   const [statusFilter, setStatusFilter] = React.useState<string | null>(null);
 
-  // Load orders and folders from localStorage
+  // Load orders and folders from Supabase
   React.useEffect(() => {
-    const storedOrders = localStorage.getItem("orders");
-    const storedFolders = localStorage.getItem("orderFolders");
+    const fetchData = async () => {
+      try {
+        // Carregar dados do Supabase
+        try {
+          const ordersData = await orderService.getOrders();
+          setOrders(ordersData);
 
-    if (storedOrders) {
-      setOrders(JSON.parse(storedOrders));
-    }
+          const foldersData = await orderService.getOrderFolders();
+          setFolders(foldersData);
+        } catch (dbError) {
+          console.error("Erro ao carregar dados do Supabase:", dbError);
 
-    if (storedFolders) {
-      setFolders(JSON.parse(storedFolders));
-    }
+          // Fallback para localStorage
+          const storedOrders = localStorage.getItem("orders");
+          const storedFolders = localStorage.getItem("orderFolders");
+
+          if (storedOrders) {
+            setOrders(JSON.parse(storedOrders));
+          }
+
+          if (storedFolders) {
+            setFolders(JSON.parse(storedFolders));
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+      }
+    };
+
+    fetchData();
+
+    // Configurar atualização periódica
+    const refreshInterval = setInterval(fetchData, 10000); // Atualizar a cada 10 segundos
+
+    // Atualizar quando a página ficar visível
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchData();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(refreshInterval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
-  // Save orders to localStorage
-  const saveOrders = (updatedOrders: Order[]) => {
+  // Save orders to Supabase and localStorage
+  const saveOrders = async (updatedOrders: Order[]) => {
     setOrders(updatedOrders);
-    localStorage.setItem("orders", JSON.stringify(updatedOrders));
+
+    try {
+      // Salvar no Supabase
+      try {
+        // Verificar se é uma adição, atualização ou exclusão
+        if (updatedOrders.length > orders.length) {
+          // Nova ordem adicionada
+          const newOrder = updatedOrders[updatedOrders.length - 1];
+          await orderService.createOrder(newOrder);
+        } else if (updatedOrders.length < orders.length) {
+          // Ordem excluída - já tratada em handleDeleteOrder
+        } else {
+          // Possível atualização - verificar cada ordem
+          for (const order of updatedOrders) {
+            const oldOrder = orders.find((o) => o.id === order.id);
+            if (
+              oldOrder &&
+              JSON.stringify(oldOrder) !== JSON.stringify(order)
+            ) {
+              await orderService.updateOrder(order.id, order);
+            }
+          }
+        }
+      } catch (dbError) {
+        console.error("Erro ao salvar pedidos no Supabase:", dbError);
+      }
+
+      // Sempre salvar no localStorage como fallback
+      localStorage.setItem("orders", JSON.stringify(updatedOrders));
+    } catch (error) {
+      console.error("Erro ao salvar pedidos:", error);
+    }
   };
 
-  // Save folders to localStorage
-  const saveFolders = (updatedFolders: Folder[]) => {
+  // Save folders to Supabase and localStorage
+  const saveFolders = async (updatedFolders: Folder[]) => {
     setFolders(updatedFolders);
-    localStorage.setItem("orderFolders", JSON.stringify(updatedFolders));
+
+    try {
+      // Salvar no Supabase
+      try {
+        // Verificar se é uma adição ou exclusão
+        if (updatedFolders.length > folders.length) {
+          // Nova pasta adicionada
+          const newFolder = updatedFolders[updatedFolders.length - 1];
+          await orderService.createOrderFolder(newFolder);
+        } else if (updatedFolders.length < folders.length) {
+          // Pasta excluída - já tratada em handleDeleteFolder
+        }
+      } catch (dbError) {
+        console.error("Erro ao salvar pastas no Supabase:", dbError);
+      }
+
+      // Sempre salvar no localStorage como fallback
+      localStorage.setItem("orderFolders", JSON.stringify(updatedFolders));
+    } catch (error) {
+      console.error("Erro ao salvar pastas:", error);
+    }
   };
 
   // Handle creating a new order
@@ -336,37 +426,90 @@ const OrdersPage = () => {
   };
 
   // Handle deleting an order
-  const handleDeleteOrder = (orderId: string) => {
-    const updatedOrders = orders.filter((order) => order.id !== orderId);
-    saveOrders(updatedOrders);
-    setOrderToDelete(null);
+  const handleDeleteOrder = async (orderId: string) => {
+    try {
+      // Excluir do Supabase
+      try {
+        await orderService.deleteOrder(orderId);
+      } catch (dbError) {
+        console.error("Erro ao excluir pedido do Supabase:", dbError);
+      }
+
+      // Atualizar estado e localStorage
+      const updatedOrders = orders.filter((order) => order.id !== orderId);
+      await saveOrders(updatedOrders);
+      setOrderToDelete(null);
+    } catch (error) {
+      console.error("Erro ao excluir pedido:", error);
+    }
   };
 
   // Handle deleting a folder
-  const handleDeleteFolder = (folderId: string, deleteOrders: boolean) => {
-    // Remove folder
-    const updatedFolders = folders.filter((folder) => folder.id !== folderId);
-    saveFolders(updatedFolders);
+  const handleDeleteFolder = async (
+    folderId: string,
+    deleteOrders: boolean,
+  ) => {
+    try {
+      // Excluir pasta do Supabase
+      try {
+        await orderService.deleteOrderFolder(folderId);
+      } catch (dbError) {
+        console.error("Erro ao excluir pasta do Supabase:", dbError);
+      }
 
-    let updatedOrders;
-    if (deleteOrders) {
-      // Delete all orders in this folder
-      updatedOrders = orders.filter((order) => order.folderId !== folderId);
-    } else {
-      // Move all orders from this folder to "no folder"
-      updatedOrders = orders.map((order) =>
-        order.folderId === folderId ? { ...order, folderId: null } : order,
-      );
+      // Atualizar estado e localStorage para pastas
+      const updatedFolders = folders.filter((folder) => folder.id !== folderId);
+      await saveFolders(updatedFolders);
+
+      let updatedOrders;
+      if (deleteOrders) {
+        // Delete all orders in this folder
+        updatedOrders = orders.filter((order) => order.folderId !== folderId);
+
+        // Excluir pedidos do Supabase
+        try {
+          const ordersToDelete = orders.filter(
+            (order) => order.folderId === folderId,
+          );
+          for (const order of ordersToDelete) {
+            await orderService.deleteOrder(order.id);
+          }
+        } catch (dbError) {
+          console.error("Erro ao excluir pedidos do Supabase:", dbError);
+        }
+      } else {
+        // Move all orders from this folder to "no folder"
+        updatedOrders = orders.map((order) =>
+          order.folderId === folderId ? { ...order, folderId: null } : order,
+        );
+
+        // Atualizar pedidos no Supabase
+        try {
+          const ordersToUpdate = orders.filter(
+            (order) => order.folderId === folderId,
+          );
+          for (const order of ordersToUpdate) {
+            await orderService.updateOrder(order.id, {
+              ...order,
+              folderId: null,
+            });
+          }
+        } catch (dbError) {
+          console.error("Erro ao atualizar pedidos no Supabase:", dbError);
+        }
+      }
+      await saveOrders(updatedOrders);
+
+      // If we're currently viewing the folder being deleted, go back to all orders
+      if (activeFolder === folderId) {
+        setActiveFolder(null);
+      }
+
+      setFolderToDelete(null);
+      setDeleteOrdersWithFolder(false);
+    } catch (error) {
+      console.error("Erro ao excluir pasta:", error);
     }
-    saveOrders(updatedOrders);
-
-    // If we're currently viewing the folder being deleted, go back to all orders
-    if (activeFolder === folderId) {
-      setActiveFolder(null);
-    }
-
-    setFolderToDelete(null);
-    setDeleteOrdersWithFolder(false);
   };
 
   // Group orders by user and create folders if needed

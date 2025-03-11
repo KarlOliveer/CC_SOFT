@@ -31,6 +31,8 @@ import ConsumptionDialog from "./ConsumptionDialog";
 import AddQuantityDialog from "./AddQuantityDialog";
 import { Material, Consumption, MaterialTransaction } from "./types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { materialService } from "@/lib/supabase-client";
+import { supabase } from "@/lib/supabase-client";
 import {
   Card,
   CardContent,
@@ -83,24 +85,36 @@ const MaterialsPage = () => {
   const [isReportOpen, setIsReportOpen] = React.useState(false);
   const username = localStorage.getItem("user");
 
-  // Load materials and transactions from localStorage
-  const loadData = () => {
+  // Load materials and transactions from Supabase
+  const loadData = async () => {
     try {
-      const storedMaterials = localStorage.getItem("materials");
-      const storedTransactions = localStorage.getItem("materialTransactions");
+      // Tentar carregar do Supabase primeiro
+      try {
+        const materials = await materialService.getMaterials();
+        setMaterials(materials);
 
-      if (storedMaterials) {
-        const parsedMaterials = JSON.parse(storedMaterials);
-        setMaterials(parsedMaterials);
-      }
+        const transactions = await materialService.getMaterialTransactions();
+        setTransactions(transactions);
+      } catch (dbError) {
+        console.error("Erro ao carregar dados do Supabase:", dbError);
 
-      if (storedTransactions) {
-        const parsedTransactions = JSON.parse(storedTransactions);
-        setTransactions(parsedTransactions);
-      } else {
-        // Initialize transactions if none exist
-        setTransactions([]);
-        localStorage.setItem("materialTransactions", JSON.stringify([]));
+        // Fallback para localStorage
+        const storedMaterials = localStorage.getItem("materials");
+        const storedTransactions = localStorage.getItem("materialTransactions");
+
+        if (storedMaterials) {
+          const parsedMaterials = JSON.parse(storedMaterials);
+          setMaterials(parsedMaterials);
+        }
+
+        if (storedTransactions) {
+          const parsedTransactions = JSON.parse(storedTransactions);
+          setTransactions(parsedTransactions);
+        } else {
+          // Initialize transactions if none exist
+          setTransactions([]);
+          localStorage.setItem("materialTransactions", JSON.stringify([]));
+        }
       }
     } catch (error) {
       console.error("Error loading data:", error);
@@ -109,8 +123,8 @@ const MaterialsPage = () => {
     }
   };
 
-  // Save materials to localStorage
-  const saveMaterials = (updatedMaterials: Material[]) => {
+  // Save materials to Supabase and localStorage
+  const saveMaterials = async (updatedMaterials: Material[]) => {
     try {
       // Update lastUpdated timestamp
       const materialsWithTimestamp = updatedMaterials.map((mat) => ({
@@ -118,6 +132,32 @@ const MaterialsPage = () => {
         lastUpdated: new Date().toISOString(),
       }));
 
+      // Salvar no Supabase
+      try {
+        // Primeiro, excluir todos os materiais existentes
+        for (const material of materialsWithTimestamp) {
+          if (material.id) {
+            // Verificar se o material já existe
+            const { data } = await supabase
+              .from("materials")
+              .select("id")
+              .eq("id", material.id)
+              .single();
+
+            if (data) {
+              // Atualizar material existente
+              await materialService.updateMaterial(material.id, material);
+            } else {
+              // Criar novo material
+              await materialService.createMaterial(material);
+            }
+          }
+        }
+      } catch (dbError) {
+        console.error("Erro ao salvar materiais no Supabase:", dbError);
+      }
+
+      // Sempre salvar no localStorage como fallback
       localStorage.setItem("materials", JSON.stringify(materialsWithTimestamp));
       setMaterials(materialsWithTimestamp);
     } catch (error) {
@@ -125,9 +165,24 @@ const MaterialsPage = () => {
     }
   };
 
-  // Save transactions to localStorage
-  const saveTransactions = (updatedTransactions: MaterialTransaction[]) => {
+  // Save transactions to Supabase and localStorage
+  const saveTransactions = async (
+    updatedTransactions: MaterialTransaction[],
+  ) => {
     try {
+      // Salvar no Supabase
+      try {
+        // Adicionar apenas a nova transação
+        if (updatedTransactions.length > transactions.length) {
+          const newTransaction =
+            updatedTransactions[updatedTransactions.length - 1];
+          await materialService.addMaterialTransaction(newTransaction);
+        }
+      } catch (dbError) {
+        console.error("Erro ao salvar transações no Supabase:", dbError);
+      }
+
+      // Sempre salvar no localStorage como fallback
       localStorage.setItem(
         "materialTransactions",
         JSON.stringify(updatedTransactions),
@@ -140,17 +195,28 @@ const MaterialsPage = () => {
 
   // Load on mount and when tab becomes visible
   React.useEffect(() => {
-    loadData();
+    // Usar função assíncrona dentro do useEffect
+    const fetchData = async () => {
+      await loadData();
+    };
+
+    fetchData();
+
+    // Configurar atualização periódica
+    const refreshInterval = setInterval(fetchData, 10000); // Atualizar a cada 10 segundos
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        loadData();
+        fetchData();
       }
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () =>
+
+    return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      clearInterval(refreshInterval);
+    };
   }, []);
 
   // Listen for order events
