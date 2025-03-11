@@ -209,7 +209,18 @@ export default function LoginForm() {
 
       // Import is inside the function to avoid circular dependencies
       const { sendPasswordResetEmail } = await import("@/lib/email");
-      await sendPasswordResetEmail(user.email, forgotUsername, resetLink);
+      const emailSent = await sendPasswordResetEmail(
+        user.email,
+        forgotUsername,
+        resetLink,
+      );
+
+      if (!emailSent) {
+        setForgotPasswordError(
+          "Ocorreu um erro ao enviar o e-mail. Por favor, tente novamente.",
+        );
+        return;
+      }
 
       setResetEmailSent(true);
       setForgotPasswordError("");

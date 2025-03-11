@@ -5,7 +5,12 @@ import "./index.css";
 import { BrowserRouter } from "react-router-dom";
 
 import { TempoDevtools } from "tempo-devtools";
+import { initEmailJS } from "./lib/emailjs";
+
 TempoDevtools.init();
+
+// Inicializar EmailJS
+initEmailJS();
 
 const basename = import.meta.env.BASE_URL;
 
