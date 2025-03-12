@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   CardFooter,
-} from "@/components/ui/card";
+} from "../ui/card";
 import {
   Dialog,
   DialogContent,
@@ -16,16 +16,33 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
-} from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+} from "../ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { Sun, Moon, Laptop } from "lucide-react";
+import SavedProfiles from "./SavedProfiles";
+import { User } from "../../types/auth";
 
-import logo from "@/assets/mcm_logo.png";
+// Logo da MCM Systems
+import logo from "../../assets/mcm_logo.png";
 
 export default function LoginForm() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     username: "",
     password: "",
+  });
+  const [savedProfiles, setSavedProfiles] = useState<User[]>([]);
+  const [showLoginForm, setShowLoginForm] = useState(true);
+  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(() => {
+    // Verificar se há um tema salvo no localStorage
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'system' | null;
+    return savedTheme || 'system';
   });
 
   // State for dialogs
@@ -49,20 +66,161 @@ export default function LoginForm() {
   const [newEmail, setNewEmail] = useState("");
   const [emailError, setEmailError] = useState("");
 
+  // Efeito para aplicar o tema
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.classList.remove('light', 'dark');
+    
+    if (theme === 'system') {
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      root.classList.add(systemTheme);
+    } else {
+      root.classList.add(theme);
+    }
+    
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  // Carregar perfis salvos do localStorage
+  useEffect(() => {
+    const savedProfilesData = localStorage.getItem("savedProfiles");
+    if (savedProfilesData) {
+      try {
+        setSavedProfiles(JSON.parse(savedProfilesData));
+      } catch (error) {
+        console.error("Erro ao carregar perfis salvos:", error);
+      }
+    }
+  }, []);
+
+  // Função para selecionar um perfil salvo
+  const handleSelectProfile = (username: string) => {
+    // Verificar se existe uma senha salva para este usuário
+    const savedPasswords = JSON.parse(localStorage.getItem("savedPasswords") || "{}");
+    const savedPassword = savedPasswords[username] || "";
+    
+    setFormData({
+      username,
+      password: savedPassword,
+    });
+    setShowLoginForm(true);
+  };
+
+  // Função para adicionar uma nova conta
+  const handleAddAccount = () => {
+    setFormData({
+      username: "",
+      password: "",
+    });
+    setShowLoginForm(true);
+  };
+
+  // Função para remover um perfil salvo
+  const handleRemoveProfile = (username: string) => {
+    const updatedProfiles = savedProfiles.filter(
+      (profile) => profile.username !== username
+    );
+    setSavedProfiles(updatedProfiles);
+    localStorage.setItem("savedProfiles", JSON.stringify(updatedProfiles));
+  };
+
+  // Função para salvar o perfil do usuário após login bem-sucedido
+  const saveUserProfile = (user: any) => {
+    // Verificar se o perfil já existe na lista
+    const existingProfileIndex = savedProfiles.findIndex(
+      (profile) => profile.username === user.username
+    );
+
+    // Garantir que o nome de exibição esteja no formato "Nome Sobrenome"
+    if (!user.displayName && user.username !== "admin.admin") {
+      user.displayName = user.username
+        .split(".")
+        .map((part: string) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" ");
+    }
+    
+    // Garantir que admin.admin seja sempre exibido como "Administrador"
+    if (user.username === "admin.admin") {
+      user.displayName = "Administrador";
+      
+      // Adicionar imagem padrão para o administrador se não existir
+      if (!user.profileImage) {
+        // Usar uma imagem padrão para o administrador
+        user.profileImage = "https://cdn-icons-png.flaticon.com/512/5556/5556512.png";
+      }
+    }
+
+    let updatedProfiles = [...savedProfiles];
+    
+    if (existingProfileIndex >= 0) {
+      // Atualizar perfil existente, preservando a imagem de perfil existente se não houver uma nova
+      if (!user.profileImage && updatedProfiles[existingProfileIndex].profileImage) {
+        user.profileImage = updatedProfiles[existingProfileIndex].profileImage;
+      }
+      updatedProfiles[existingProfileIndex] = user;
+    } else {
+      // Adicionar novo perfil (limitando a 3 perfis)
+      updatedProfiles = [user, ...updatedProfiles.slice(0, 2)];
+    }
+
+    setSavedProfiles(updatedProfiles);
+    localStorage.setItem("savedProfiles", JSON.stringify(updatedProfiles));
+    
+    // Também salvar no localStorage de usuários para garantir persistência
+    if (user.username === "admin.admin") {
+      const adminUser = {
+        username: "admin.admin",
+        displayName: "Administrador",
+        profileImage: user.profileImage,
+        role: "Gestão",
+        permissions: []
+      };
+      
+      // Atualizar o usuário admin no localStorage de usuários
+      const users = JSON.parse(localStorage.getItem("users") || "[]");
+      const adminIndex = users.findIndex((u: any) => u.username === "admin.admin");
+      
+      if (adminIndex >= 0) {
+        users[adminIndex] = { ...users[adminIndex], profileImage: user.profileImage };
+      } else {
+        users.push(adminUser);
+      }
+      
+      localStorage.setItem("users", JSON.stringify(users));
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     // Check admin credentials
     if (formData.username === "admin.admin" && formData.password === "admin") {
+      const adminUser = {
+        username: "admin.admin",
+        displayName: "Administrador",
+        role: "Gestão" as const,
+        permissions: [],
+      };
+      
       localStorage.setItem("isAuthenticated", "true");
       localStorage.setItem("user", formData.username);
+      saveUserProfile(adminUser);
       navigate("/");
       return;
     }
 
-    // Check other users from localStorage
+    // Check if the input is an email or username
+    const isEmail = formData.username.includes("@");
     const users = JSON.parse(localStorage.getItem("users") || "[]");
-    const user = users.find((u: any) => u.username === formData.username);
+    let user;
+    
+    if (isEmail) {
+      // Try to find user by email
+      user = users.find((u: any) => u.email === formData.username);
+    } else {
+      // Try to find user by username
+      user = users.find((u: any) => u.username === formData.username);
+    }
 
     // If user not found
     if (!user) {
@@ -98,6 +256,7 @@ export default function LoginForm() {
     // Normal login
     localStorage.setItem("isAuthenticated", "true");
     localStorage.setItem("user", user.username);
+    saveUserProfile(user);
     navigate("/");
   };
 
@@ -132,6 +291,13 @@ export default function LoginForm() {
       // Otherwise complete login
       localStorage.setItem("isAuthenticated", "true");
       localStorage.setItem("user", currentUser.username);
+      
+      // Salvar perfil do usuário
+      const updatedUser = users.find((u: any) => u.username === currentUser.username);
+      if (updatedUser) {
+        saveUserProfile(updatedUser);
+      }
+      
       setChangePasswordDialogOpen(false);
       navigate("/");
     }
@@ -166,10 +332,27 @@ export default function LoginForm() {
     localStorage.setItem("isAuthenticated", "true");
     localStorage.setItem("user", currentUser.username);
 
+    // Salvar perfil do usuário
+    const updatedUser = updatedUsers.find((u: any) => u.username === currentUser.username);
+    if (updatedUser) {
+      saveUserProfile(updatedUser);
+    }
+
     setEmailDialogOpen(false);
     navigate("/");
   };
 
+  // Função para abrir o diálogo de recuperação de senha
+  const handleOpenForgotPassword = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevenir o comportamento padrão do formulário
+    setForgotPasswordOpen(true);
+    setForgotUsername("");
+    setResetEmailSent(false);
+    setForgotPasswordError("");
+    setErrorDialogOpen(false); // Prevent error dialog from appearing
+  };
+
+  // Função para processar a recuperação de senha
   const handleForgotPassword = async () => {
     if (!forgotUsername) {
       setForgotPasswordError("Por favor, digite seu nome de usuário.");
@@ -209,7 +392,7 @@ export default function LoginForm() {
 
       try {
         // Import is inside the function to avoid circular dependencies
-        const { sendPasswordResetEmail } = await import("@/lib/email");
+        const { sendPasswordResetEmail } = await import("../../lib/email");
         console.log("Tentando enviar e-mail para:", user.email);
         const emailSent = await sendPasswordResetEmail(
           user.email,
@@ -242,19 +425,69 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Card className="w-[350px]">
-        <CardHeader>
-          <div className="flex justify-center mb-4">
-            <img src={logo} alt="MCM Systems Logo" className="h-12 w-auto" />
+    <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
+      <div className="w-full max-w-5xl bg-white dark:bg-gray-800 rounded-xl shadow-xl overflow-hidden flex flex-col md:flex-row">
+        {/* Lado esquerdo - Logo e perfis */}
+        <div className="w-full md:w-1/2 bg-blue-50 dark:bg-gray-700 p-8 flex flex-col items-center md:items-start relative">
+          {/* Logo posicionado no canto superior esquerdo */}
+          <div className="absolute top-4 left-4">
+            <img 
+              src={logo} 
+              alt="MCM Systems" 
+              className="h-16 w-auto" 
+            />
           </div>
-          <CardTitle>Login</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
+          
+          {/* Seletor de tema no canto superior direito */}
+          <div className="absolute top-4 right-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" className="h-8 w-8">
+                  {theme === 'light' && <Sun className="h-4 w-4" />}
+                  {theme === 'dark' && <Moon className="h-4 w-4" />}
+                  {theme === 'system' && <Laptop className="h-4 w-4" />}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setTheme('light')}>
+                  <Sun className="mr-2 h-4 w-4" />
+                  <span>Claro</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme('dark')}>
+                  <Moon className="mr-2 h-4 w-4" />
+                  <span>Escuro</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme('system')}>
+                  <Laptop className="mr-2 h-4 w-4" />
+                  <span>Sistema</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          
+          {/* Espaço para garantir que os perfis não fiquem atrás do logo */}
+          <div className="w-full h-16 mb-4"></div>
+          
+          {savedProfiles.length > 0 && (
+            <div className="w-full">
+              <SavedProfiles
+                profiles={savedProfiles}
+                onSelectProfile={handleSelectProfile}
+                onRemoveProfile={handleRemoveProfile}
+                onAddAccount={handleAddAccount}
+              />
+            </div>
+          )}
+        </div>
+        
+        {/* Lado direito - Formulário de login */}
+        <div className="w-full md:w-1/2 p-8 flex flex-col justify-center">
+          <h2 className="text-2xl font-bold mb-6 text-center md:text-left text-gray-800 dark:text-white">Acesso ao Sistema</h2>
+          
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
               <Input
-                placeholder="nome.sobrenome"
+                placeholder="Email ou nome.sobrenome"
                 value={formData.username}
                 onChange={(e) =>
                   setFormData({
@@ -262,9 +495,11 @@ export default function LoginForm() {
                     username: e.target.value.toLowerCase(),
                   })
                 }
+                className="h-12 text-base w-full"
               />
             </div>
-            <div className="space-y-2">
+            
+            <div>
               <Input
                 type="password"
                 placeholder="Senha"
@@ -272,23 +507,53 @@ export default function LoginForm() {
                 onChange={(e) =>
                   setFormData({ ...formData, password: e.target.value })
                 }
+                className="h-12 text-base w-full"
               />
             </div>
-            <Button type="submit" className="w-full">
+            
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="remember-password"
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                onChange={(e) => {
+                  if (e.target.checked && formData.username) {
+                    // Salvar senha no localStorage
+                    const savedPasswords = JSON.parse(localStorage.getItem("savedPasswords") || "{}");
+                    savedPasswords[formData.username] = formData.password;
+                    localStorage.setItem("savedPasswords", JSON.stringify(savedPasswords));
+                  }
+                }}
+              />
+              <label htmlFor="remember-password" className="text-sm text-gray-600 dark:text-gray-400">
+                Lembrar senha
+              </label>
+            </div>
+            
+            <Button 
+              type="submit" 
+              className="w-full h-12 text-base font-semibold bg-blue-600 hover:bg-blue-700"
+            >
               Entrar
             </Button>
+            
+            <div className="flex justify-center">
+              <Button
+                variant="link"
+                className="text-sm text-blue-600"
+                onClick={handleOpenForgotPassword}
+                type="button"
+              >
+                Esqueceu a senha?
+              </Button>
+            </div>
           </form>
-        </CardContent>
-        <CardFooter className="flex justify-center">
-          <Button
-            variant="link"
-            className="text-sm text-blue-600"
-            onClick={() => setForgotPasswordOpen(true)}
-          >
-            Esqueci minha senha
-          </Button>
-        </CardFooter>
-      </Card>
+          
+          <p className="text-center text-sm mt-6 text-gray-600 dark:text-gray-400">
+            Automação inteligente para resultados superiores.
+          </p>
+        </div>
+      </div>
 
       {/* Error Dialog */}
       <Dialog open={errorDialogOpen} onOpenChange={setErrorDialogOpen}>

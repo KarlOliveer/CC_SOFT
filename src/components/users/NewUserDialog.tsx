@@ -87,6 +87,12 @@ const NewUserDialog = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Impedir edição do usuário admin.admin
+    if (editingUser && editingUser.username === "admin.admin") {
+      onOpenChange(false);
+      return;
+    }
+
     // Validate fields
     if (!editingUser) {
       const isUsernameValid = validateUsername(formData.username);
@@ -120,8 +126,8 @@ const NewUserDialog = ({
 
       // Add password to changes if provided
       if (newPassword) {
-        changes.password = newPassword;
-        changes.passwordChanged = true;
+        (changes as any).password = newPassword;
+        (changes as any).passwordChanged = true;
       }
 
       onSubmit(changes);
@@ -138,7 +144,7 @@ const NewUserDialog = ({
         password: "mcmsystems",
         passwordChanged: false,
         emailSet: false,
-      });
+      } as any);
     }
   };
 

@@ -39,6 +39,11 @@ const UserManagement = () => {
   };
 
   const handleEditUser = (username: string, updatedData: Partial<User>) => {
+    // Impedir qualquer edição do usuário admin.admin
+    if (username === "admin.admin") {
+      return;
+    }
+    
     const updatedUsers = users.map((user) =>
       user.username === username ? { ...user, ...updatedData } : user,
     );
@@ -47,8 +52,9 @@ const UserManagement = () => {
   };
 
   const handleDeleteUser = (username: string) => {
-    if (username === currentUsername) {
-      return; // Não permite excluir o próprio usuário
+    // Não permite excluir o próprio usuário ou o admin.admin
+    if (username === currentUsername || username === "admin.admin") {
+      return;
     }
     setUserToDelete(username);
   };
@@ -95,7 +101,7 @@ const UserManagement = () => {
 
       <div className="space-y-4">
         {users
-          .filter((user) => (isAdmin ? true : user.username !== "admin.admin"))
+          .filter((user) => user.username !== "admin.admin")
           .map((user) => (
             <div
               key={user.username}

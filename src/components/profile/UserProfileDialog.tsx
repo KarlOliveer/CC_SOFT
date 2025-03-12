@@ -104,6 +104,23 @@ const UserProfileDialog = ({ open, onOpenChange }: UserProfileDialogProps) => {
     });
 
     localStorage.setItem("users", JSON.stringify(updatedUsers));
+    
+    // Atualizar a imagem do perfil nos perfis salvados para login
+    const savedProfiles = JSON.parse(localStorage.getItem("savedProfiles") || "[]");
+    const updatedProfiles = savedProfiles.map((profile: any) => {
+      if (profile.username === currentUser.username) {
+        return {
+          ...profile,
+          profileImage,
+          // Se for admin.admin, garantir que o displayName seja "Administrador"
+          displayName: currentUser.username === "admin.admin" ? "Administrador" : displayName
+        };
+      }
+      return profile;
+    });
+    
+    localStorage.setItem("savedProfiles", JSON.stringify(updatedProfiles));
+    
     setSuccessMessage("Perfil atualizado com sucesso!");
     setTimeout(() => setSuccessMessage(""), 3000);
   };
@@ -207,81 +224,89 @@ const UserProfileDialog = ({ open, onOpenChange }: UserProfileDialogProps) => {
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Nome de Exibição</label>
-                <Input
-                  placeholder="Seu nome de exibição"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
+            {currentUser?.username !== "admin.admin" && (
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Nome de Exibição</label>
+                  <Input
+                    placeholder="Seu nome de exibição"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
 
-              <div>
-                <label className="text-sm font-medium">E-mail</label>
-                <Input
-                  type="email"
-                  placeholder="seu.email@exemplo.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="mt-1"
-                />
-                {emailError && (
-                  <p className="text-sm text-red-500 mt-1">{emailError}</p>
-                )}
+                <div>
+                  <label className="text-sm font-medium">E-mail</label>
+                  <Input
+                    type="email"
+                    placeholder="seu.email@exemplo.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="mt-1"
+                  />
+                  {emailError && (
+                    <p className="text-sm text-red-500 mt-1">{emailError}</p>
+                  )}
+                </div>
               </div>
+            )}
 
-              <Button onClick={handleSaveProfile} className="w-full">
-                Salvar Alterações
-              </Button>
-            </div>
+            <Button onClick={handleSaveProfile} className="w-full">
+              Salvar Alterações
+            </Button>
           </TabsContent>
 
           <TabsContent value="security" className="space-y-4 py-4">
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Senha Atual</label>
-                <Input
-                  type="password"
-                  placeholder="Digite sua senha atual"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="mt-1"
-                />
+            {currentUser?.username === "admin.admin" ? (
+              <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-md text-center">
+                <p>Não é possível alterar a senha do usuário Administrador.</p>
               </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Senha Atual</label>
+                  <Input
+                    type="password"
+                    placeholder="Digite sua senha atual"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
 
-              <div>
-                <label className="text-sm font-medium">Nova Senha</label>
-                <Input
-                  type="password"
-                  placeholder="Digite a nova senha"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="mt-1"
-                />
+                <div>
+                  <label className="text-sm font-medium">Nova Senha</label>
+                  <Input
+                    type="password"
+                    placeholder="Digite a nova senha"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">
+                    Confirmar Nova Senha
+                  </label>
+                  <Input
+                    type="password"
+                    placeholder="Confirme a nova senha"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="mt-1"
+                  />
+                  {passwordError && (
+                    <p className="text-sm text-red-500 mt-1">{passwordError}</p>
+                  )}
+                </div>
+
+                <Button onClick={handleChangePassword} className="w-full">
+                  Alterar Senha
+                </Button>
               </div>
-
-              <div>
-                <label className="text-sm font-medium">
-                  Confirmar Nova Senha
-                </label>
-                <Input
-                  type="password"
-                  placeholder="Confirme a nova senha"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="mt-1"
-                />
-                {passwordError && (
-                  <p className="text-sm text-red-500 mt-1">{passwordError}</p>
-                )}
-              </div>
-
-              <Button onClick={handleChangePassword} className="w-full">
-                Alterar Senha
-              </Button>
-            </div>
+            )}
           </TabsContent>
         </Tabs>
 

@@ -39,17 +39,22 @@ const Sidebar = () => {
 
   React.useEffect(() => {
     if (username) {
-      const users = JSON.parse(localStorage.getItem("users") || "[]");
-      const user = users.find((u: any) => u.username === username);
-      if (user && user.displayName) {
-        setDisplayName(user.displayName);
-      } else if (username) {
-        // Format username as display name
-        const formattedName = username
-          .split(".")
-          .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-          .join(" ");
-        setDisplayName(formattedName);
+      // Se for o admin.admin, sempre exibir como "Administrador"
+      if (username === "admin.admin") {
+        setDisplayName("Administrador");
+      } else {
+        const users = JSON.parse(localStorage.getItem("users") || "[]");
+        const user = users.find((u: any) => u.username === username);
+        if (user && user.displayName) {
+          setDisplayName(user.displayName);
+        } else if (username) {
+          // Format username as display name
+          const formattedName = username
+            .split(".")
+            .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+            .join(" ");
+          setDisplayName(formattedName);
+        }
       }
     }
   }, [username]);
