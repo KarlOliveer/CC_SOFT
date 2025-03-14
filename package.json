@@ -42,7 +42,7 @@
     "@radix-ui/react-toggle": "^1.0.3",
     "@radix-ui/react-tooltip": "^1.0.7",
     "@react-pdf/renderer": "^4.2.1",
-    "@supabase/supabase-js": "^2.45.6",
+    "@supabase/supabase-js": "^2.49.1",
     "@types/file-saver": "^2.0.7",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
@@ -76,5 +76,18 @@
     "tempo-devtools": "^2.0.94",
     "typescript": "^5.2.2",
     "vite": "^5.2.0"
-  }
+  },
+  "description": "This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.",
+  "main": "postcss.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KarlOliveer/CC_SOFT.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KarlOliveer/CC_SOFT/issues"
+  },
+  "homepage": "https://github.com/KarlOliveer/CC_SOFT#readme"
 }

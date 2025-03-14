@@ -12,6 +12,7 @@ import PrivateRoute from "./components/auth/PrivateRoute";
 import UserManagement from "./components/users/UserManagement";
 import routes from "tempo-routes";
 
+
 function App() {
   return (
     <Suspense fallback={<p>Loading...</p>}>

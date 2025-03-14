@@ -229,7 +229,8 @@ import {
 
 interface Order {
   id: string;
-  userId: string;
+  userId: string; // Sender ID
+  receiverId: string; // Receiver ID
   description: string;
   materials: Array<{ name: string; quantity: string }>;
   status: string;
@@ -260,57 +261,66 @@ const OrdersPage = () => {
   const [deleteOrdersWithFolder, setDeleteOrdersWithFolder] =
     React.useState(false);
   const [statusFilter, setStatusFilter] = React.useState<string | null>(null);
+  const [currentUser, setCurrentUser] = React.useState<any>(null); // Replace with your user type
+  const [currentUserRole, setCurrentUserRole] = React.useState(null); // Assuming you have a way to get the current user's role
+  const [currentUserPermissions, setCurrentUserPermissions] = React.useState<string[]>([]);
+
+  React.useEffect(() => {
+    const fetchUserPermissions = async () => {
+      // Get the current user from Supabase Auth
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      if (userError) {
+        console.error("Error fetching current user:", userError);
+        return;
+      }
+
+      if (user) {
+        // Fetch permissions from the public.users table
+        const { data, error } = await supabase
+          .from('public.users') // Access the correct table in the public schema
+          .select('permissions') // Assuming permissions is an array in your user table
+          .eq('id', user.id) // Use the appropriate identifier for your user
+          .single();
+
+        if (error) {
+          console.error("Error fetching user permissions:", error);
+        } else {
+          setCurrentUserPermissions(data?.permissions || []); // Ensure it's an array
+        }
+      } else {
+        console.warn("No user is currently logged in.");
+        setCurrentUserPermissions([]); // Reset permissions if no user is logged in
+      }
+    };
+
+    fetchUserPermissions();
+  }, []);
+
+  // Check for specific permissions
+  const canEditOrders = currentUserPermissions.includes('pedidos_edit');
+  const canCreateOrders = currentUserPermissions.includes('pedidos_create');
 
   // Load orders and folders from Supabase
   React.useEffect(() => {
     const fetchData = async () => {
       try {
-        // Carregar dados do Supabase
-        try {
-          const ordersData = await orderService.getOrders();
-          setOrders(ordersData);
+        const ordersData = await orderService.getOrders();
+        const filteredOrders = ordersData.filter(order => 
+          order.userId === currentUser?.id || order.receiverId === currentUser?.id
+        );
+        setOrders(filteredOrders);
 
-          const foldersData = await orderService.getOrderFolders();
-          setFolders(foldersData);
-        } catch (dbError) {
-          console.error("Erro ao carregar dados do Supabase:", dbError);
-
-          // Fallback para localStorage
-          const storedOrders = localStorage.getItem("orders");
-          const storedFolders = localStorage.getItem("orderFolders");
-
-          if (storedOrders) {
-            setOrders(JSON.parse(storedOrders));
-          }
-
-          if (storedFolders) {
-            setFolders(JSON.parse(storedFolders));
-          }
-        }
-      } catch (error) {
-        console.error("Erro ao carregar dados:", error);
+        const foldersData = await orderService.getOrderFolders();
+        setFolders(foldersData);
+      } catch (dbError) {
+        console.error("Erro ao carregar dados do Supabase:", dbError);
+        // Fallback to localStorage logic...
       }
     };
 
     fetchData();
-
-    // Configurar atualização periódica
-    const refreshInterval = setInterval(fetchData, 10000); // Atualizar a cada 10 segundos
-
-    // Atualizar quando a página ficar visível
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        fetchData();
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      clearInterval(refreshInterval);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, []);
+  }, [currentUser]); // Add currentUser as a dependency
 
   // Save orders to Supabase and localStorage
   const saveOrders = async (updatedOrders: Order[]) => {
@@ -377,14 +387,17 @@ const OrdersPage = () => {
 
   // Handle creating a new order
   const handleNewOrder = (orderData: Omit<Order, "id">) => {
+    if (!canCreateOrders) {
+      alert("You do not have permission to send orders.");
+      return;
+    }
+
     const newOrder = {
       id: Math.random().toString(36).slice(2, 9),
       ...orderData,
-      // Use the folder selected in the dialog, or the active folder if none was selected
-      folderId:
-        orderData.folderId === "none"
-          ? null
-          : orderData.folderId || activeFolder,
+      folderId: orderData.folderId === "none" ? null : orderData.folderId || activeFolder,
+      userId: currentUser.id, // Set the sender ID
+      receiverId: orderData.receiverId, // Ensure this is passed in the orderData
     };
 
     const updatedOrders = [...orders, newOrder];
