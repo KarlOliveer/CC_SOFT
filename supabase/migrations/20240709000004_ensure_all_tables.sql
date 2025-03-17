@@ -1,3 +1,5 @@
+-- Verificar e criar todas as tabelas necessárias
+
 -- Tabela de usuários
 CREATE TABLE IF NOT EXISTS users (
   username TEXT PRIMARY KEY,
@@ -100,5 +102,41 @@ CREATE TABLE IF NOT EXISTS tests (
   updatedAt TIMESTAMP
 );
 
--- Configurar realtime para todas as tabelas
-ALTER PUBLICATION supabase_realtime ADD TABLE users, reset_tokens, projects, materials, material_transactions, orders, order_folders, tests;
+-- Desativar RLS para todas as tabelas
+ALTER TABLE users DISABLE ROW LEVEL SECURITY;
+ALTER TABLE reset_tokens DISABLE ROW LEVEL SECURITY;
+ALTER TABLE projects DISABLE ROW LEVEL SECURITY;
+ALTER TABLE materials DISABLE ROW LEVEL SECURITY;
+ALTER TABLE material_transactions DISABLE ROW LEVEL SECURITY;
+ALTER TABLE orders DISABLE ROW LEVEL SECURITY;
+ALTER TABLE order_folders DISABLE ROW LEVEL SECURITY;
+ALTER TABLE tests DISABLE ROW LEVEL SECURITY;
+
+-- Adicionar tabelas ao realtime
+DO $$
+DECLARE
+  table_name text;
+  already_exists boolean;
+BEGIN
+  FOR table_name IN 
+    SELECT 'users' UNION ALL
+    SELECT 'reset_tokens' UNION ALL
+    SELECT 'projects' UNION ALL
+    SELECT 'materials' UNION ALL
+    SELECT 'material_transactions' UNION ALL
+    SELECT 'orders' UNION ALL
+    SELECT 'order_folders' UNION ALL
+    SELECT 'tests'
+  LOOP
+    -- Verificar se a tabela já está na publicação
+    SELECT EXISTS (
+      SELECT 1 FROM pg_publication_tables 
+      WHERE pubname = 'supabase_realtime' AND tablename = table_name
+    ) INTO already_exists;
+    
+    -- Adicionar apenas se não existir
+    IF NOT already_exists THEN
+      EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE %I', table_name);
+    END IF;
+  END LOOP;
+END$$;

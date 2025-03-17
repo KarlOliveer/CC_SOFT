@@ -15,6 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { supabase } from '@/lib/supabase'; // Ajuste o caminho conforme necessário
 
 const UserManagement = () => {
   const [users, setUsers] = React.useState<User[]>([]);

@@ -102,3 +102,13 @@ CREATE TABLE IF NOT EXISTS tests (
 
 -- Configurar realtime para todas as tabelas
 ALTER PUBLICATION supabase_realtime ADD TABLE users, reset_tokens, projects, materials, material_transactions, orders, order_folders, tests;
+
+-- Desativar RLS para todas as tabelas
+ALTER TABLE users DISABLE ROW LEVEL SECURITY;
+ALTER TABLE reset_tokens DISABLE ROW LEVEL SECURITY;
+ALTER TABLE projects DISABLE ROW LEVEL SECURITY;
+ALTER TABLE materials DISABLE ROW LEVEL SECURITY;
+ALTER TABLE material_transactions DISABLE ROW LEVEL SECURITY;
+ALTER TABLE orders DISABLE ROW LEVEL SECURITY;
+ALTER TABLE order_folders DISABLE ROW LEVEL SECURITY;
+ALTER TABLE tests DISABLE ROW LEVEL SECURITY;
