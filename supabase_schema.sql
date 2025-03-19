@@ -1,3 +1,4 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Tabela de usuários
 CREATE TABLE IF NOT EXISTS users (
   username TEXT PRIMARY KEY,
@@ -20,17 +21,17 @@ CREATE TABLE IF NOT EXISTS reset_tokens (
 
 -- Tabela de projetos
 CREATE TABLE IF NOT EXISTS projects (
-  id TEXT PRIMARY KEY,
-  title TEXT,
-  type TEXT,
-  dueDate TEXT,
-  serviceType TEXT,
-  description TEXT,
-  priority TEXT,
-  status TEXT,
-  hardwareSpecs JSONB,
-  boards JSONB,
-  repairDetails JSONB
+  id uuid DEFAULT uuid_generate_v4() NOT NULL PRIMARY KEY,
+  title text,
+  type text,
+  due_date text,
+  service_type text,
+  description text,
+  priority text,
+  status text,
+  hardware_specs jsonb,
+  boards jsonb,
+  repair_details jsonb
 );
 
 -- Tabela de materiais

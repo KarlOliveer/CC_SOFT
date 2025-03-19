@@ -1,11 +1,9 @@
-"use client"; // Ensure this is a client component since it uses hooks
+"use client"; // Garante que o componente é cliente, pois utiliza hooks
 
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { User, Permission } from "@/types/auth";
-import { userService } from "@/lib/supabase-client";
-import { supabase } from "@/lib/supabase-client";
 import NewUserDialog from "./NewUserDialog";
 import {
   AlertDialog,
@@ -17,6 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { supabase } from "@/lib/supabase"; // Ajuste o caminho conforme necessário
 
 const UserManagement = () => {
   const [users, setUsers] = React.useState<User[]>([]);
@@ -26,8 +25,19 @@ const UserManagement = () => {
   const currentUsername = localStorage.getItem("user");
   const isAdmin = currentUsername === "admin.admin";
 
+  // Busca os usuários do Supabase ao montar o componente
+  const fetchUsers = async () => {
+    try {
+      const { data, error } = await supabase.from("users").select("*");
+      if (error) throw error;
+      setUsers(data);
+    } catch (error) {
+      console.error("Erro ao buscar usuários no Supabase:", error);
+    }
+  };
+
+  // Cria um novo usuário com os valores padrão e insere no Supabase
   const handleCreateUser = async (userData: User) => {
-    // New user with default values
     const newUser = {
       ...userData,
       password: "mcmsystems",
@@ -36,118 +46,68 @@ const UserManagement = () => {
     };
 
     try {
-      // Salvar no Supabase
-      try {
-        await userService.upsertUser(newUser);
-      } catch (dbError) {
-        console.error("Erro ao criar usuário no Supabase:", dbError);
-      }
-
-      // Atualizar estado e localStorage
-      const updatedUsers = [...users, newUser];
-      setUsers(updatedUsers);
-      localStorage.setItem("users", JSON.stringify(updatedUsers));
+      const { data, error } = await supabase.from("users").insert([newUser]);
+      if (error) throw error;
+      // Atualiza o estado com o novo usuário retornado do Supabase
+      setUsers([...users, ...data]);
     } catch (error) {
-      console.error("Erro ao criar usuário:", error);
+      console.error("Erro ao criar usuário no Supabase:", error);
     }
   };
 
-  const handleEditUser = async (
-    username: string,
-    updatedData: Partial<User>,
-  ) => {
-    try {
-      // Atualizar no Supabase
-      try {
-        await userService.updateUser(username, updatedData);
-      } catch (dbError) {
-        console.error("Erro ao atualizar usuário no Supabase:", dbError);
-      }
+  // Edita um usuário (exceto o admin.admin) e atualiza no Supabase
+  const handleEditUser = async (username: string, updatedData: Partial<User>) => {
+    if (username === "admin.admin") {
+      return;
+    }
 
-      // Atualizar estado e localStorage
+    try {
+      const { error } = await supabase
+        .from("users")
+        .update(updatedData)
+        .eq("username", username);
+
+      if (error) throw error;
+
+      // Atualiza o estado com os dados modificados
       const updatedUsers = users.map((user) =>
         user.username === username ? { ...user, ...updatedData } : user,
       );
       setUsers(updatedUsers);
-      localStorage.setItem("users", JSON.stringify(updatedUsers));
     } catch (error) {
-      console.error("Erro ao atualizar usuário:", error);
+      console.error("Erro ao atualizar usuário no Supabase:", error);
     }
   };
 
+  // Prepara a exclusão de um usuário (não permite excluir o usuário atual ou o admin.admin)
   const handleDeleteUser = (username: string) => {
-    if (username === currentUsername) {
-      return; // Não permite excluir o próprio usuário
+    if (username === currentUsername || username === "admin.admin") {
+      return;
     }
     setUserToDelete(username);
   };
 
+  // Confirma a exclusão do usuário selecionado e remove do Supabase
   const confirmDelete = async () => {
     if (userToDelete) {
       try {
-        // Excluir do Supabase
-        try {
-          await userService.deleteUser(userToDelete);
-        } catch (dbError) {
-          console.error("Erro ao excluir usuário do Supabase:", dbError);
-        }
+        const { error } = await supabase
+          .from("users")
+          .delete()
+          .eq("username", userToDelete);
+        if (error) throw error;
 
-        // Atualizar estado e localStorage
-        const updatedUsers = users.filter(
-          (user) => user.username !== userToDelete,
-        );
+        const updatedUsers = users.filter((user) => user.username !== userToDelete);
         setUsers(updatedUsers);
-        localStorage.setItem("users", JSON.stringify(updatedUsers));
         setUserToDelete(null);
       } catch (error) {
-        console.error("Erro ao excluir usuário:", error);
+        console.error("Erro ao excluir usuário do Supabase:", error);
       }
     }
   };
 
   React.useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        // Carregar usuários do Supabase
-        try {
-          const usersData = await userService.getUsers();
-          setUsers(usersData);
-        } catch (dbError) {
-          console.error("Erro ao carregar usuários do Supabase:", dbError);
-
-          // Fallback para localStorage
-          const storedUsers = localStorage.getItem("users");
-          if (storedUsers) {
-            try {
-              setUsers(JSON.parse(storedUsers));
-            } catch (error) {
-              console.error("Error parsing stored users:", error);
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Erro ao carregar usuários:", error);
-      }
-    };
-
     fetchUsers();
-
-    // Configurar atualização periódica
-    const refreshInterval = setInterval(fetchUsers, 10000); // Atualizar a cada 10 segundos
-
-    // Atualizar quando a página ficar visível
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        fetchUsers();
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      clearInterval(refreshInterval);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
   }, []);
 
   return (
@@ -170,7 +130,7 @@ const UserManagement = () => {
 
       <div className="space-y-4">
         {users
-          .filter((user) => (isAdmin ? true : user.username !== "admin.admin"))
+          .filter((user) => user.username !== "admin.admin")
           .map((user) => (
             <div
               key={user.username}
@@ -194,7 +154,7 @@ const UserManagement = () => {
                       Permissões:
                     </h4>
                     <div className="flex flex-wrap gap-2">
-                      {user.permissions.map((permission) => (
+                      {user.permissions.map((permission: Permission) => (
                         <span
                           key={permission}
                           className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-xs text-gray-800 dark:text-gray-200"
@@ -242,8 +202,7 @@ const UserManagement = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir este usuário? Esta ação não pode
-              ser desfeita.
+              Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -271,9 +230,7 @@ const UserManagement = () => {
           setEditingUser(null);
         }}
         editingUser={
-          editingUser
-            ? users.find((u) => u.username === editingUser)
-            : undefined
+          editingUser ? users.find((u) => u.username === editingUser) : undefined
         }
         currentUsername={currentUsername}
       />

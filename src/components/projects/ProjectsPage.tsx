@@ -7,8 +7,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { downloadProjectReport } from "./DownloadReport";
-import { projectService } from "@/lib/supabase-client";
-import { supabase } from "@/lib/supabase-client";
+import { supabase } from "@/lib/supabase";
 
 interface Project {
   id: string;
@@ -28,223 +27,119 @@ interface Project {
 }
 
 const ProjectsPage = () => {
-  const [editingProject, setEditingProject] = React.useState<string | null>(
-    null,
-  );
+  const [editingProject, setEditingProject] = React.useState<string | null>(null);
   const [activeProjects, setActiveProjects] = React.useState<Project[]>([]);
-  const [completedProjects, setCompletedProjects] = React.useState<Project[]>(
-    [],
-  );
+  const [completedProjects, setCompletedProjects] = React.useState<Project[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
 
-  // Load projects from Supabase
-  React.useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Carregar dados do Supabase
-        try {
-          const projectsData = await projectService.getProjects();
-          if (projectsData && projectsData.length > 0) {
-            const active = projectsData.filter((p) => p.status !== "Concluído");
-            const completed = projectsData.filter(
-              (p) => p.status === "Concluído",
-            );
-            setActiveProjects(active);
-            setCompletedProjects(completed);
-          } else {
-            // Fallback para localStorage
-            loadFromLocalStorage();
-          }
-        } catch (dbError) {
-          console.error("Erro ao carregar projetos do Supabase:", dbError);
-
-          // Fallback para localStorage
-          loadFromLocalStorage();
-        }
-      } catch (error) {
-        console.error("Erro ao carregar projetos:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    const loadFromLocalStorage = () => {
-      try {
-        const storedActive = localStorage.getItem("activeProjects");
-        const storedCompleted = localStorage.getItem("completedProjects");
-        if (storedActive) {
-          setActiveProjects(JSON.parse(storedActive));
-        }
-        if (storedCompleted) {
-          setCompletedProjects(JSON.parse(storedCompleted));
-        }
-      } catch (error) {
-        console.error("Error reading from localStorage:", error);
-      }
-    };
-
-    fetchData();
-
-    // Configurar atualização periódica
-    const refreshInterval = setInterval(fetchData, 10000); // Atualizar a cada 10 segundos
-
-    // Atualizar quando a página ficar visível
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        fetchData();
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      clearInterval(refreshInterval);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, []);
-
-  // Save projects to Supabase and localStorage
-  const saveProjects = async (active: Project[], completed: Project[]) => {
+  // Load projects from localStorage
+  const loadProjects = () => {
     try {
-      // Salvar no Supabase
-      try {
-        // Salvar projetos ativos
-        for (const project of active) {
-          try {
-            const { data } = await supabase
-              .from("projects")
-              .select("id")
-              .eq("id", project.id)
-              .single();
-
-            if (data) {
-              // Atualizar projeto existente
-              await projectService.updateProject(project.id, project);
-            } else {
-              // Criar novo projeto
-              await projectService.createProject(project);
-            }
-          } catch (projectError) {
-            console.error(
-              `Erro ao salvar projeto ${project.id}:`,
-              projectError,
-            );
-            // Tentar inserir diretamente
-            await supabase
-              .from("projects")
-              .upsert(project, { onConflict: "id" });
-          }
-        }
-
-        // Salvar projetos concluídos
-        for (const project of completed) {
-          try {
-            const { data } = await supabase
-              .from("projects")
-              .select("id")
-              .eq("id", project.id)
-              .single();
-
-            if (data) {
-              // Atualizar projeto existente
-              await projectService.updateProject(project.id, project);
-            } else {
-              // Criar novo projeto
-              await projectService.createProject(project);
-            }
-          } catch (projectError) {
-            console.error(
-              `Erro ao salvar projeto ${project.id}:`,
-              projectError,
-            );
-            // Tentar inserir diretamente
-            await supabase
-              .from("projects")
-              .upsert(project, { onConflict: "id" });
-          }
-        }
-      } catch (dbError) {
-        console.error("Erro ao salvar projetos no Supabase:", dbError);
+      const storedActive = localStorage.getItem("activeProjects");
+      const storedCompleted = localStorage.getItem("completedProjects");
+      if (storedActive) {
+        setActiveProjects(JSON.parse(storedActive));
       }
+      if (storedCompleted) {
+        setCompletedProjects(JSON.parse(storedCompleted));
+      }
+    } catch (error) {
+      console.error("Error reading from localStorage:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      // Sempre salvar no localStorage como fallback
+  // Save projects to localStorage
+  const saveProjects = (active: Project[], completed: Project[]) => {
+    try {
       localStorage.setItem("activeProjects", JSON.stringify(active));
       localStorage.setItem("completedProjects", JSON.stringify(completed));
       setActiveProjects(active);
       setCompletedProjects(completed);
     } catch (error) {
-      console.error("Error saving projects:", error);
+      console.error("Error writing to localStorage:", error);
     }
   };
 
+  // Load on mount and when tab becomes visible
+  React.useEffect(() => {
+    loadProjects();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        loadProjects();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, []);
+
   // Handle project completion
-  const handleProjectComplete = async (projectId: string) => {
+  const handleProjectComplete = (projectId: string) => {
     const project = activeProjects.find((p) => p.id === projectId);
     if (project) {
       const updatedProject = { ...project, status: "Concluído" as const };
       const newActive = activeProjects.filter((p) => p.id !== projectId);
       const newCompleted = [...completedProjects, updatedProject];
-      await saveProjects(newActive, newCompleted);
+      saveProjects(newActive, newCompleted);
     }
   };
 
-  // Create or update a project
+  // Create a new project
   const handleNewProject = async (data: Omit<Project, "id">) => {
-    const newProject: Project = {
-      id: Math.random().toString(36).slice(2, 9),
-      ...data,
-    };
-    if (newProject.status === "Concluído") {
-      await saveProjects(activeProjects, [...completedProjects, newProject]);
-    } else {
-      await saveProjects([...activeProjects, newProject], completedProjects);
+    // Supabase returns an array of inserted rows in `data`
+    const { data: insertedProjects, error } = await supabase
+      .from("projects")
+      .insert([{ ...data }]);
+
+    if (error) {
+      console.error("Erro ao adicionar projeto:", error);
+      return;
     }
-    setEditingProject(null);
+
+    // If insertion was successful, insertedProjects should be an array with the new row
+    if (insertedProjects && insertedProjects.length > 0) {
+      // insertedProjects[0] is the newly created project with its auto-generated id
+      setActiveProjects([...activeProjects, insertedProjects[0]]);
+    }
   };
 
   // Edit an existing project
-  const handleEditProject = async (
-    projectId: string,
-    data: Partial<Project>,
-  ) => {
-    const project = activeProjects.find((p) => p.id === projectId);
-    if (project) {
-      const updatedProject = { ...project, ...data };
-      if (updatedProject.status === "Concluído") {
-        const newActive = activeProjects.filter((p) => p.id !== projectId);
-        const newCompleted = [...completedProjects, updatedProject];
-        await saveProjects(newActive, newCompleted);
-      } else {
-        const newActive = activeProjects.map((p) =>
-          p.id === projectId ? updatedProject : p,
-        );
-        await saveProjects(newActive, completedProjects);
-      }
+  const handleEditProject = async (projectId: string, data: Partial<Project>) => {
+    const { error } = await supabase
+      .from("projects")
+      .update(data)
+      .eq("id", projectId);
+
+    if (error) {
+      console.error("Erro ao editar projeto:", error);
+      return;
     }
-    setEditingProject(null);
+
+    // Update local state
+    const updatedProjects = activeProjects.map((p) =>
+      p.id === projectId ? { ...p, ...data } : p
+    );
+    setActiveProjects(updatedProjects);
   };
 
-  // Handle deleting a project
+  // Delete an existing project
   const handleDeleteProject = async (projectId: string) => {
-    try {
-      // Excluir do Supabase
-      try {
-        await projectService.deleteProject(projectId);
-      } catch (dbError) {
-        console.error("Erro ao excluir projeto do Supabase:", dbError);
-      }
+    const { error } = await supabase
+      .from("projects")
+      .delete()
+      .eq("id", projectId);
 
-      // Atualizar estado e localStorage
-      const updatedActive = activeProjects.filter(
-        (project) => project.id !== projectId,
-      );
-      const updatedCompleted = completedProjects.filter(
-        (project) => project.id !== projectId,
-      );
-      await saveProjects(updatedActive, updatedCompleted);
-    } catch (error) {
+    if (error) {
       console.error("Erro ao excluir projeto:", error);
+      return;
     }
+
+    // Update local state
+    const updatedProjects = activeProjects.filter((p) => p.id !== projectId);
+    setActiveProjects(updatedProjects);
   };
 
   // Sidebar categories
@@ -255,10 +150,8 @@ const ProjectsPage = () => {
     const typeLower = type.toLowerCase();
     return typeLower === "todos"
       ? activeProjects.length + completedProjects.length
-      : activeProjects.filter((p) => p.type.toLowerCase() === typeLower)
-          .length +
-          completedProjects.filter((p) => p.type.toLowerCase() === typeLower)
-            .length;
+      : activeProjects.filter((p) => p.type.toLowerCase() === typeLower).length +
+          completedProjects.filter((p) => p.type.toLowerCase() === typeLower).length;
   };
 
   if (isLoading) {
@@ -298,9 +191,7 @@ const ProjectsPage = () => {
               "
             >
               <span className="text-sm font-medium">{type}</span>
-              <span className="text-sm text-gray-500">
-                {getCategoryCount(type)}
-              </span>
+              <span className="text-sm text-gray-500">{getCategoryCount(type)}</span>
             </div>
           ))}
         </div>
@@ -329,35 +220,25 @@ const ProjectsPage = () => {
                     <div className="flex justify-between items-start">
                       <div>
                         <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-lg font-semibold">
-                            {project.title}
-                          </h3>
+                          <h3 className="text-lg font-semibold">{project.title}</h3>
                           <div
                             className={cn(
                               "px-2 py-1 rounded-full text-xs font-medium",
                               project.priority === "Alta"
                                 ? "bg-red-100 text-red-800"
                                 : project.priority === "Média"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : "bg-green-100 text-green-800",
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-green-100 text-green-800"
                             )}
                           >
                             {project.priority}
                           </div>
                         </div>
-                        <div className="text-sm text-gray-500 mb-4">
-                          {project.type}
-                        </div>
+                        <div className="text-sm text-gray-500 mb-4">{project.type}</div>
                         <div className="space-y-2">
-                          <div className="text-sm">
-                            Data Limite: {project.dueDate}
-                          </div>
-                          <div className="text-sm">
-                            Tipo de Serviço: {project.serviceType}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {project.description}
-                          </div>
+                          <div className="text-sm">Data Limite: {project.dueDate}</div>
+                          <div className="text-sm">Tipo de Serviço: {project.serviceType}</div>
+                          <div className="text-sm text-gray-500">{project.description}</div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -426,23 +307,13 @@ const ProjectsPage = () => {
                       <div className="flex justify-between items-start">
                         <div>
                           <div className="flex items-center gap-2 mb-2">
-                            <h3 className="text-lg font-semibold">
-                              {project.title}
-                            </h3>
+                            <h3 className="text-lg font-semibold">{project.title}</h3>
                           </div>
-                          <div className="text-sm text-gray-500 mb-4">
-                            {project.type}
-                          </div>
+                          <div className="text-sm text-gray-500 mb-4">{project.type}</div>
                           <div className="space-y-2">
-                            <div className="text-sm">
-                              Data Limite: {project.dueDate}
-                            </div>
-                            <div className="text-sm">
-                              Tipo de Serviço: {project.serviceType}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {project.description}
-                            </div>
+                            <div className="text-sm">Data Limite: {project.dueDate}</div>
+                            <div className="text-sm">Tipo de Serviço: {project.serviceType}</div>
+                            <div className="text-sm text-gray-500">{project.description}</div>
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-2">

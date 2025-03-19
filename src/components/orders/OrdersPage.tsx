@@ -3,8 +3,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { orderService } from "@/lib/supabase-client";
-import { supabase } from "@/lib/supabase-client";
 import {
   Plus,
   FolderPlus,
@@ -229,8 +227,7 @@ import {
 
 interface Order {
   id: string;
-  userId: string; // Sender ID
-  receiverId: string; // Receiver ID
+  userId: string;
   description: string;
   materials: Array<{ name: string; quantity: string }>;
   status: string;
@@ -261,143 +258,43 @@ const OrdersPage = () => {
   const [deleteOrdersWithFolder, setDeleteOrdersWithFolder] =
     React.useState(false);
   const [statusFilter, setStatusFilter] = React.useState<string | null>(null);
-  const [currentUser, setCurrentUser] = React.useState<any>(null); // Replace with your user type
-  const [currentUserRole, setCurrentUserRole] = React.useState(null); // Assuming you have a way to get the current user's role
-  const [currentUserPermissions, setCurrentUserPermissions] = React.useState<string[]>([]);
 
+  // Load orders and folders from localStorage
   React.useEffect(() => {
-    const fetchUserPermissions = async () => {
-      // Get the current user from Supabase Auth
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const storedOrders = localStorage.getItem("orders");
+    const storedFolders = localStorage.getItem("orderFolders");
 
-      if (userError) {
-        console.error("Error fetching current user:", userError);
-        return;
-      }
+    if (storedOrders) {
+      setOrders(JSON.parse(storedOrders));
+    }
 
-      if (user) {
-        // Fetch permissions from the public.users table
-        const { data, error } = await supabase
-          .from('public.users') // Access the correct table in the public schema
-          .select('permissions') // Assuming permissions is an array in your user table
-          .eq('id', user.id) // Use the appropriate identifier for your user
-          .single();
-
-        if (error) {
-          console.error("Error fetching user permissions:", error);
-        } else {
-          setCurrentUserPermissions(data?.permissions || []); // Ensure it's an array
-        }
-      } else {
-        console.warn("No user is currently logged in.");
-        setCurrentUserPermissions([]); // Reset permissions if no user is logged in
-      }
-    };
-
-    fetchUserPermissions();
+    if (storedFolders) {
+      setFolders(JSON.parse(storedFolders));
+    }
   }, []);
 
-  // Check for specific permissions
-  const canEditOrders = currentUserPermissions.includes('pedidos_edit');
-  const canCreateOrders = currentUserPermissions.includes('pedidos_create');
-
-  // Load orders and folders from Supabase
-  React.useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const ordersData = await orderService.getOrders();
-        const filteredOrders = ordersData.filter(order => 
-          order.userId === currentUser?.id || order.receiverId === currentUser?.id
-        );
-        setOrders(filteredOrders);
-
-        const foldersData = await orderService.getOrderFolders();
-        setFolders(foldersData);
-      } catch (dbError) {
-        console.error("Erro ao carregar dados do Supabase:", dbError);
-        // Fallback to localStorage logic...
-      }
-    };
-
-    fetchData();
-  }, [currentUser]); // Add currentUser as a dependency
-
-  // Save orders to Supabase and localStorage
-  const saveOrders = async (updatedOrders: Order[]) => {
+  // Save orders to localStorage
+  const saveOrders = (updatedOrders: Order[]) => {
     setOrders(updatedOrders);
-
-    try {
-      // Salvar no Supabase
-      try {
-        // Verificar se é uma adição, atualização ou exclusão
-        if (updatedOrders.length > orders.length) {
-          // Nova ordem adicionada
-          const newOrder = updatedOrders[updatedOrders.length - 1];
-          await orderService.createOrder(newOrder);
-        } else if (updatedOrders.length < orders.length) {
-          // Ordem excluída - já tratada em handleDeleteOrder
-        } else {
-          // Possível atualização - verificar cada ordem
-          for (const order of updatedOrders) {
-            const oldOrder = orders.find((o) => o.id === order.id);
-            if (
-              oldOrder &&
-              JSON.stringify(oldOrder) !== JSON.stringify(order)
-            ) {
-              await orderService.updateOrder(order.id, order);
-            }
-          }
-        }
-      } catch (dbError) {
-        console.error("Erro ao salvar pedidos no Supabase:", dbError);
-      }
-
-      // Sempre salvar no localStorage como fallback
-      localStorage.setItem("orders", JSON.stringify(updatedOrders));
-    } catch (error) {
-      console.error("Erro ao salvar pedidos:", error);
-    }
+    localStorage.setItem("orders", JSON.stringify(updatedOrders));
   };
 
-  // Save folders to Supabase and localStorage
-  const saveFolders = async (updatedFolders: Folder[]) => {
+  // Save folders to localStorage
+  const saveFolders = (updatedFolders: Folder[]) => {
     setFolders(updatedFolders);
-
-    try {
-      // Salvar no Supabase
-      try {
-        // Verificar se é uma adição ou exclusão
-        if (updatedFolders.length > folders.length) {
-          // Nova pasta adicionada
-          const newFolder = updatedFolders[updatedFolders.length - 1];
-          await orderService.createOrderFolder(newFolder);
-        } else if (updatedFolders.length < folders.length) {
-          // Pasta excluída - já tratada em handleDeleteFolder
-        }
-      } catch (dbError) {
-        console.error("Erro ao salvar pastas no Supabase:", dbError);
-      }
-
-      // Sempre salvar no localStorage como fallback
-      localStorage.setItem("orderFolders", JSON.stringify(updatedFolders));
-    } catch (error) {
-      console.error("Erro ao salvar pastas:", error);
-    }
+    localStorage.setItem("orderFolders", JSON.stringify(updatedFolders));
   };
 
   // Handle creating a new order
   const handleNewOrder = (orderData: Omit<Order, "id">) => {
-    if (!canCreateOrders) {
-      alert("You do not have permission to send orders.");
-      return;
-    }
-
     const newOrder = {
       id: Math.random().toString(36).slice(2, 9),
       ...orderData,
-      folderId: orderData.folderId === "none" ? null : orderData.folderId || activeFolder,
-      userId: currentUser.id, // Set the sender ID
-      receiverId: orderData.receiverId, // Ensure this is passed in the orderData
+      // Use the folder selected in the dialog, or the active folder if none was selected
+      folderId:
+        orderData.folderId === "none"
+          ? null
+          : orderData.folderId || activeFolder,
     };
 
     const updatedOrders = [...orders, newOrder];
@@ -439,90 +336,37 @@ const OrdersPage = () => {
   };
 
   // Handle deleting an order
-  const handleDeleteOrder = async (orderId: string) => {
-    try {
-      // Excluir do Supabase
-      try {
-        await orderService.deleteOrder(orderId);
-      } catch (dbError) {
-        console.error("Erro ao excluir pedido do Supabase:", dbError);
-      }
-
-      // Atualizar estado e localStorage
-      const updatedOrders = orders.filter((order) => order.id !== orderId);
-      await saveOrders(updatedOrders);
-      setOrderToDelete(null);
-    } catch (error) {
-      console.error("Erro ao excluir pedido:", error);
-    }
+  const handleDeleteOrder = (orderId: string) => {
+    const updatedOrders = orders.filter((order) => order.id !== orderId);
+    saveOrders(updatedOrders);
+    setOrderToDelete(null);
   };
 
   // Handle deleting a folder
-  const handleDeleteFolder = async (
-    folderId: string,
-    deleteOrders: boolean,
-  ) => {
-    try {
-      // Excluir pasta do Supabase
-      try {
-        await orderService.deleteOrderFolder(folderId);
-      } catch (dbError) {
-        console.error("Erro ao excluir pasta do Supabase:", dbError);
-      }
+  const handleDeleteFolder = (folderId: string, deleteOrders: boolean) => {
+    // Remove folder
+    const updatedFolders = folders.filter((folder) => folder.id !== folderId);
+    saveFolders(updatedFolders);
 
-      // Atualizar estado e localStorage para pastas
-      const updatedFolders = folders.filter((folder) => folder.id !== folderId);
-      await saveFolders(updatedFolders);
-
-      let updatedOrders;
-      if (deleteOrders) {
-        // Delete all orders in this folder
-        updatedOrders = orders.filter((order) => order.folderId !== folderId);
-
-        // Excluir pedidos do Supabase
-        try {
-          const ordersToDelete = orders.filter(
-            (order) => order.folderId === folderId,
-          );
-          for (const order of ordersToDelete) {
-            await orderService.deleteOrder(order.id);
-          }
-        } catch (dbError) {
-          console.error("Erro ao excluir pedidos do Supabase:", dbError);
-        }
-      } else {
-        // Move all orders from this folder to "no folder"
-        updatedOrders = orders.map((order) =>
-          order.folderId === folderId ? { ...order, folderId: null } : order,
-        );
-
-        // Atualizar pedidos no Supabase
-        try {
-          const ordersToUpdate = orders.filter(
-            (order) => order.folderId === folderId,
-          );
-          for (const order of ordersToUpdate) {
-            await orderService.updateOrder(order.id, {
-              ...order,
-              folderId: null,
-            });
-          }
-        } catch (dbError) {
-          console.error("Erro ao atualizar pedidos no Supabase:", dbError);
-        }
-      }
-      await saveOrders(updatedOrders);
-
-      // If we're currently viewing the folder being deleted, go back to all orders
-      if (activeFolder === folderId) {
-        setActiveFolder(null);
-      }
-
-      setFolderToDelete(null);
-      setDeleteOrdersWithFolder(false);
-    } catch (error) {
-      console.error("Erro ao excluir pasta:", error);
+    let updatedOrders;
+    if (deleteOrders) {
+      // Delete all orders in this folder
+      updatedOrders = orders.filter((order) => order.folderId !== folderId);
+    } else {
+      // Move all orders from this folder to "no folder"
+      updatedOrders = orders.map((order) =>
+        order.folderId === folderId ? { ...order, folderId: null } : order,
+      );
     }
+    saveOrders(updatedOrders);
+
+    // If we're currently viewing the folder being deleted, go back to all orders
+    if (activeFolder === folderId) {
+      setActiveFolder(null);
+    }
+
+    setFolderToDelete(null);
+    setDeleteOrdersWithFolder(false);
   };
 
   // Group orders by user and create folders if needed
