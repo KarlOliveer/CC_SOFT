@@ -89,7 +89,6 @@ const ProjectsPage = () => {
 
   // Create a new project
   const handleNewProject = async (data: Omit<Project, "id">) => {
-    // Supabase returns an array of inserted rows in `data`
     const { data: insertedProjects, error } = await supabase
       .from("projects")
       .insert([{ ...data }]);
@@ -99,9 +98,7 @@ const ProjectsPage = () => {
       return;
     }
 
-    // If insertion was successful, insertedProjects should be an array with the new row
     if (insertedProjects && insertedProjects.length > 0) {
-      // insertedProjects[0] is the newly created project with its auto-generated id
       setActiveProjects([...activeProjects, insertedProjects[0]]);
     }
   };
@@ -118,7 +115,6 @@ const ProjectsPage = () => {
       return;
     }
 
-    // Update local state
     const updatedProjects = activeProjects.map((p) =>
       p.id === projectId ? { ...p, ...data } : p
     );
@@ -137,9 +133,12 @@ const ProjectsPage = () => {
       return;
     }
 
-    // Update local state
-    const updatedProjects = activeProjects.filter((p) => p.id !== projectId);
-    setActiveProjects(updatedProjects);
+    // Remove from active or completed
+    const updatedActive = activeProjects.filter((p) => p.id !== projectId);
+    const updatedCompleted = completedProjects.filter((p) => p.id !== projectId);
+
+    // Save changes to localStorage
+    saveProjects(updatedActive, updatedCompleted);
   };
 
   // Sidebar categories
@@ -205,6 +204,7 @@ const ProjectsPage = () => {
               <TabsTrigger value="concluidos">Concluídos</TabsTrigger>
             </TabsList>
 
+            {/* Em Andamento */}
             <TabsContent value="em-andamento" className="mt-4">
               <div className="space-y-4">
                 {activeProjects.map((project) => (
@@ -242,9 +242,11 @@ const ProjectsPage = () => {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
+                        {/* Edit Button */}
                         <button
                           onClick={() => setEditingProject(project.id)}
                           className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                          title="Editar projeto"
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -261,9 +263,12 @@ const ProjectsPage = () => {
                             <path d="m15 5 4 4" />
                           </svg>
                         </button>
+
+                        {/* Complete Button */}
                         <button
                           onClick={() => handleProjectComplete(project.id)}
                           className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                          title="Marcar como Concluído"
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -280,6 +285,26 @@ const ProjectsPage = () => {
                             <path d="m9 12 2 2 4-4" />
                           </svg>
                         </button>
+
+                        {/* Delete Button */}
+                        <button
+                          onClick={() => handleDeleteProject(project.id)}
+                          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                          title="Excluir projeto"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M6 2a2 2 0 00-2 2v1H2.5a.5.5 0 000 1H3v9a2 2 0 002 2h10a2 2 0 002-2v-9h.5a.5.5 0 000-1H16V4a2 2 0 00-2-2H6zm1 3v9a.5.5 0 101 0V5H7zm3 0v9a.5.5 0 101 0V5h-1zm3 0v9a.5.5 0 101 0V5h-1z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -287,6 +312,7 @@ const ProjectsPage = () => {
               </div>
             </TabsContent>
 
+            {/* Concluídos */}
             <TabsContent value="concluidos" className="mt-4">
               <div className="space-y-4">
                 {completedProjects.length === 0 ? (
@@ -317,11 +343,21 @@ const ProjectsPage = () => {
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-2">
+                          {/* Download Report Button */}
                           <button
                             onClick={() => downloadProjectReport(project)}
                             className="text-sm text-blue-600 hover:text-blue-800"
                           >
                             Baixar Relatório
+                          </button>
+
+                          {/* Delete Button */}
+                          <button
+                            onClick={() => handleDeleteProject(project.id)}
+                            className="text-sm text-red-600 hover:text-red-800"
+                            title="Excluir projeto"
+                          >
+                            Excluir
                           </button>
                         </div>
                       </div>
