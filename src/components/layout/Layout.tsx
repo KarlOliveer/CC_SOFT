@@ -1,6 +1,5 @@
 import React from "react";
-import Sidebar from "./Sidebar";
-import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import Navbar from "./Navbar";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -15,15 +14,12 @@ const Layout = ({ children }: LayoutProps) => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Sidebar />
-      <div className="flex-1">
-        <DashboardHeader
-          onThemeToggle={handleThemeToggle}
-          isDarkMode={isDarkMode}
-        />
-        <main>{children}</main>
-      </div>
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+      <Navbar 
+        onThemeToggle={handleThemeToggle}
+        isDarkMode={isDarkMode}
+      />
+      <main className="flex-1 p-6">{children}</main>
     </div>
   );
 };

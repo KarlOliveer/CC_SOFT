@@ -25,8 +25,6 @@ const navItems = [
   { label: "Materiais", icon: Package, href: "/materiais" },
   { label: "Testes", icon: TestTube, href: "/testes" },
   { label: "Pedidos", icon: MessageSquare, href: "/pedidos" },
-  { label: "Entregas", icon: Truck, href: "/entregas" },
-  { label: "Checklists", icon: ClipboardCheck, href: "/checklists" },
   { label: "Usuários", icon: Users, href: "/usuarios" },
 ];
 
@@ -87,7 +85,7 @@ const Sidebar = () => {
 
       {/* Título */}
       <div className="px-6 mb-6">
-        <h2 className="text-lg font-semibold">Gerenciamento Técnico</h2>
+        <h2 className="text-lg font-semibold">MCM Systems</h2>
       </div>
 
       {/* Navegação */}

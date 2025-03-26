@@ -86,32 +86,7 @@ const DashboardHeader = ({
       </div>
 
       <div className="flex items-center gap-2">
-        <DropdownMenu>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon">
-                    <Download className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Export data</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onExport("pdf")}>
-              <FileText className="h-4 w-4 mr-2" />
-              Export as PDF
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onExport("csv")}>
-              <FileSpreadsheet className="h-4 w-4 mr-2" />
-              Export as CSV
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+
 
         <TooltipProvider>
           <Tooltip>

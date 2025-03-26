@@ -41,7 +41,7 @@ const DashboardGrid = ({
         <motion.div variants={item}>
           <h1 className="text-4xl font-bold mb-2">Dashboard</h1>
           <p className="text-gray-500 dark:text-gray-400 mb-8">
-            Bem-vindo ao seu painel de gerenciamento técnico
+            Bem-vindo ao seu painel da MCM Systems
           </p>
         </motion.div>
 
