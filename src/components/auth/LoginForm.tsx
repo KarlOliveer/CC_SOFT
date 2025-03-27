@@ -18,8 +18,19 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
 
 import logo from "@/assets/mcm_logo.png";
+import light_logo from "@/assets/mcm_logo_light.png";
+
+// Interface para o histórico de login
+interface LoginHistoryItem {
+  username: string;
+  displayName: string;
+  timestamp: number;
+  profileImage?: string;
+}
 
 export default function LoginForm() {
   const navigate = useNavigate();
@@ -48,14 +59,165 @@ export default function LoginForm() {
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [emailError, setEmailError] = useState("");
+  
+  // State for login history
+  const [loginHistory, setLoginHistory] = useState<LoginHistoryItem[]>([]);
+  
+  // State for remember password
+  const [rememberPassword, setRememberPassword] = useState(false);
+
+  // Carregar histórico de login e credenciais salvas ao iniciar o componente
+  useEffect(() => {
+    const storedHistory = localStorage.getItem("loginHistory");
+    if (storedHistory) {
+      setLoginHistory(JSON.parse(storedHistory));
+    }
+    
+    // Verificar se existem credenciais salvas para o último usuário logado
+    const savedCredentialsMap = localStorage.getItem("savedCredentialsMap");
+    if (savedCredentialsMap) {
+      // Apenas definimos o estado de lembrar senha como true se houver credenciais salvas
+      setRememberPassword(true);
+      // Não preenchemos automaticamente os campos, isso será feito apenas ao clicar no usuário
+    }
+  }, []);
+
+  // Função para adicionar um usuário ao histórico de login
+  const addToLoginHistory = (username: string) => {
+    // Sempre obter a lista mais atualizada de usuários
+    const users = JSON.parse(localStorage.getItem("users") || "[]");
+    const user = users.find((u: any) => u.username === username);
+    
+    let displayName = username;
+    if (username === "admin.admin") {
+      displayName = "Administrador";
+    } else if (user && user.displayName) {
+      displayName = user.displayName;
+    } else {
+      // Format username as display name
+      displayName = username
+        .split(".")
+        .map((part: string) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" ");
+    }
+    
+    const newHistoryItem: LoginHistoryItem = {
+      username,
+      displayName,
+      timestamp: Date.now(),
+      profileImage: user?.profileImage || "", // Garantir que a imagem de perfil seja incluída
+    };
+    
+    // Obter histórico atual
+    const currentHistory = JSON.parse(localStorage.getItem("loginHistory") || "[]");
+    
+    // Remover entrada duplicada se existir
+    const filteredHistory = currentHistory.filter(
+      (item: LoginHistoryItem) => item.username !== username
+    );
+    
+    // Adicionar novo item no início
+    const newHistory = [newHistoryItem, ...filteredHistory].slice(0, 3);
+    
+    // Salvar no localStorage
+    localStorage.setItem("loginHistory", JSON.stringify(newHistory));
+    setLoginHistory(newHistory);
+  };
+
+  // Função para selecionar um usuário do histórico
+  const selectUserFromHistory = (username: string) => {
+    setFormData({
+      ...formData,
+      username,
+    });
+  };
+
+  // Função para preencher a senha ao clicar na foto do usuário
+  const fillPasswordFromHistory = (username: string) => {
+    // Verificar se existem credenciais salvas para este usuário específico
+    const savedCredentialsMap = localStorage.getItem("savedCredentialsMap");
+    if (savedCredentialsMap) {
+      const credentialsMap = JSON.parse(savedCredentialsMap);
+      if (credentialsMap[username]) {
+        setFormData({
+          username,
+          password: credentialsMap[username]
+        });
+        return;
+      }
+    }
+    
+    // Se não houver credenciais salvas para este usuário, apenas preenche o nome de usuário
+    setFormData({
+      ...formData,
+      username,
+    });
+  };
+
+  // Função para remover um usuário do histórico
+  const removeFromLoginHistory = (e: React.MouseEvent, username: string) => {
+    e.stopPropagation(); // Impedir que o clique propague para o item do histórico
+    
+    // Obter histórico atual
+    const currentHistory = JSON.parse(localStorage.getItem("loginHistory") || "[]");
+    
+    // Filtrar o usuário a ser removido
+    const filteredHistory = currentHistory.filter(
+      (item: LoginHistoryItem) => item.username !== username
+    );
+    
+    // Salvar no localStorage
+    localStorage.setItem("loginHistory", JSON.stringify(filteredHistory));
+    setLoginHistory(filteredHistory);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Salvar credenciais se a opção estiver marcada
+    if (rememberPassword) {
+      // Obter o mapa atual de credenciais ou criar um novo
+      const savedCredentialsMap = JSON.parse(localStorage.getItem("savedCredentialsMap") || "{}");
+      
+      // Salvar a senha para este usuário específico
+      savedCredentialsMap[formData.username] = formData.password;
+      
+      // Atualizar o localStorage
+      localStorage.setItem("savedCredentialsMap", JSON.stringify(savedCredentialsMap));
+    } else {
+      // Se não quiser lembrar a senha, remover apenas a senha deste usuário específico
+      const savedCredentialsMap = JSON.parse(localStorage.getItem("savedCredentialsMap") || "{}");
+      if (savedCredentialsMap[formData.username]) {
+        delete savedCredentialsMap[formData.username];
+        localStorage.setItem("savedCredentialsMap", JSON.stringify(savedCredentialsMap));
+      }
+    }
 
     // Check admin credentials
     if (formData.username === "admin.admin" && formData.password === "admin") {
       localStorage.setItem("isAuthenticated", "true");
       localStorage.setItem("user", formData.username);
+      
+      // Garantir que a imagem de perfil seja preservada
+      const users = JSON.parse(localStorage.getItem("users") || "[]");
+      const adminUser = users.find((u: any) => u.username === "admin.admin");
+      if (!adminUser) {
+        // Se o admin não existir na lista de usuários, adicione-o
+        users.push({
+          username: "admin.admin",
+          displayName: "Administrador",
+          role: "Gestão",
+          permissions: [],
+          profileImage: "",
+          password: "admin"
+        });
+        localStorage.setItem("users", JSON.stringify(users));
+      } else if (adminUser && !adminUser.profileImage) {
+        // Se o admin existir mas não tiver imagem de perfil, mantenha os dados existentes
+        // mas não sobrescreva a imagem
+      }
+      
+      addToLoginHistory(formData.username);
       navigate("/");
       return;
     }
@@ -98,6 +260,7 @@ export default function LoginForm() {
     // Normal login
     localStorage.setItem("isAuthenticated", "true");
     localStorage.setItem("user", user.username);
+    addToLoginHistory(user.username);
     navigate("/");
   };
 
@@ -132,6 +295,7 @@ export default function LoginForm() {
       // Otherwise complete login
       localStorage.setItem("isAuthenticated", "true");
       localStorage.setItem("user", currentUser.username);
+      addToLoginHistory(currentUser.username);
       setChangePasswordDialogOpen(false);
       navigate("/");
     }
@@ -165,6 +329,7 @@ export default function LoginForm() {
     localStorage.setItem("users", JSON.stringify(updatedUsers));
     localStorage.setItem("isAuthenticated", "true");
     localStorage.setItem("user", currentUser.username);
+    addToLoginHistory(currentUser.username);
 
     setEmailDialogOpen(false);
     navigate("/");
@@ -243,52 +408,126 @@ export default function LoginForm() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Card className="w-[350px]">
-        <CardHeader>
-          <div className="flex justify-center mb-4">
-            <img src={logo} alt="MCM Systems Logo" className="h-12 w-auto" />
+      <div className="flex bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden max-w-4xl w-full">
+        {/* Seção esquerda - Histórico de login */}
+        <div className="w-1/3 bg-blue-600 dark:bg-blue-800 p-8 flex flex-col justify-between">
+          <div>
+            <div className="flex justify-center mb-8">
+              <img src={light_logo} alt="Crysor Tech Logo" className="h-20 w-auto" />
+            </div>
+            {loginHistory.length > 0 && (
+              <div className="space-y-4">
+                <p className="text-blue-100 text-sm mb-4">Logins recentes:</p>
+                {loginHistory.map((item, index) => (
+                  <div 
+                    key={index} 
+                    className="flex items-center space-x-3 p-2 rounded-lg hover:bg-blue-700 cursor-pointer transition-colors relative group"
+                  >
+                    <div 
+                      className="flex items-center space-x-3 flex-grow"
+                      onClick={() => fillPasswordFromHistory(item.username)}
+                    >
+                      <Avatar className="h-10 w-10 border-2 border-white">
+                        {item.profileImage ? (
+                          <AvatarImage src={item.profileImage} alt={item.displayName} />
+                        ) : (
+                          <AvatarFallback className="bg-blue-400 text-white">
+                            {item.displayName
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")
+                              .toUpperCase()}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <div>
+                        <p className="text-white font-medium">{item.displayName}</p>
+                        <p className="text-blue-200 text-xs">{item.username}</p>
+                      </div>
+                    </div>
+                    <button 
+                      className="absolute right-2 top-2 text-blue-200 hover:text-white p-1 rounded-full hover:bg-blue-800 transition-colors opacity-0 group-hover:opacity-100"
+                      onClick={(e) => removeFromLoginHistory(e, item.username)}
+                      title="Remover do histórico"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          <CardTitle>Login</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Input
-                placeholder="nome.sobrenome"
-                value={formData.username}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    username: e.target.value.toLowerCase(),
-                  })
-                }
-              />
+          <div className="mt-auto">
+            <p className="text-blue-100 text-sm font-semibold">© {new Date().getFullYear()} Crysor Tech</p>
+          </div>
+        </div>
+        
+        {/* Seção direita - Formulário de login */}
+        <div className="w-2/3 p-8">
+          <div className="max-w-md mx-auto">
+            <div className="mb-8">
+              {/* Título 'Login' removido conforme solicitado */}
             </div>
-            <div className="space-y-2">
-              <Input
-                type="password"
-                placeholder="Senha"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-              />
-            </div>
-            <Button type="submit" className="w-full">
-              Entrar
-            </Button>
-          </form>
-        </CardContent>
-        <CardFooter className="flex justify-center">
-          <Button
-            variant="link"
-            className="text-sm text-blue-600"
-            onClick={() => setForgotPasswordOpen(true)}
-          >
-            Esqueci minha senha
-          </Button>
-        </CardFooter>
-      </Card>
+            
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Nome de usuário</label>
+                <Input
+                  placeholder="nome.sobrenome"
+                  value={formData.username}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      username: e.target.value.toLowerCase(),
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Senha</label>
+                <Input
+                  type="password"
+                  placeholder="Sua senha"
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="remember" 
+                  checked={rememberPassword} 
+                  onCheckedChange={(checked) => setRememberPassword(checked === true)}
+                />
+                <label 
+                  htmlFor="remember" 
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                >
+                  Lembrar senha
+                </label>
+              </div>
+              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
+                Entrar
+              </Button>
+              
+              <div className="flex flex-col items-center mt-4">
+                <Button
+                  variant="link"
+                  className="text-sm text-blue-600"
+                  onClick={() => setForgotPasswordOpen(true)}
+                >
+                  Esqueci minha senha
+                </Button>
+                <p className="text-sm text-gray-500 mt-2 italic">Automação inteligente para resultados superiores</p>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
 
       {/* Error Dialog */}
       <Dialog open={errorDialogOpen} onOpenChange={setErrorDialogOpen}>

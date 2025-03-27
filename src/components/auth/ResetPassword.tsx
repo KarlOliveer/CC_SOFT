@@ -119,8 +119,8 @@ const ResetPassword = () => {
     <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
       <Card className="w-[400px]">
         <CardHeader>
-          <div className="flex justify-center mb-4">
-            <img src={logo} alt="MCM Systems Logo" className="h-12 w-auto" />
+          <div className="flex justify-center mb-6">
+            <img src={logo} alt="Crysor Tech Logo" className="h-20 w-auto" />
           </div>
           <CardTitle>Redefinir Senha</CardTitle>
         </CardHeader>

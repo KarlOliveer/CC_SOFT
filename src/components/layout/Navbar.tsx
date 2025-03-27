@@ -190,15 +190,54 @@ const Navbar = ({
             {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
 
-          {/* User profile button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full"
-            onClick={() => setProfileDialogOpen(true)}
-          >
-            <User className="h-4 w-4" />
-          </Button>
+          {/* User profile dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full"
+              >
+                {(() => {
+                  const users = JSON.parse(
+                    localStorage.getItem("users") || "[]"
+                  );
+                  const user = users.find(
+                    (u: any) => u.username === username
+                  );
+                  if (user?.profileImage) {
+                    return (
+                      <div className="h-6 w-6 overflow-hidden rounded-full">
+                        <img
+                          src={user.profileImage}
+                          alt={displayName}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    );
+                  } else {
+                    return (
+                      <div className="flex h-6 w-6 items-center justify-center bg-blue-500 text-xs text-white rounded-full">
+                        {displayName
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .toUpperCase()}
+                      </div>
+                    );
+                  }
+                })()}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setProfileDialogOpen(true)}>
+                Configuração
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>
+                Sair
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 

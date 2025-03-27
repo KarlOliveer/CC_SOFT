@@ -104,6 +104,24 @@ const UserProfileDialog = ({ open, onOpenChange }: UserProfileDialogProps) => {
     });
 
     localStorage.setItem("users", JSON.stringify(updatedUsers));
+    
+    // Atualizar o usuário atual no localStorage
+    localStorage.setItem("user", currentUser.username);
+    
+    // Atualizar o histórico de login com a nova imagem de perfil
+    const loginHistory = JSON.parse(localStorage.getItem("loginHistory") || "[]");
+    const updatedHistory = loginHistory.map((item: any) => {
+      if (item.username === currentUser.username) {
+        return {
+          ...item,
+          profileImage,
+          displayName
+        };
+      }
+      return item;
+    });
+    localStorage.setItem("loginHistory", JSON.stringify(updatedHistory));
+    
     setSuccessMessage("Perfil atualizado com sucesso!");
     setTimeout(() => setSuccessMessage(""), 3000);
   };
