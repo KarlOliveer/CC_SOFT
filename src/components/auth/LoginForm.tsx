@@ -20,6 +20,13 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Sun, Moon, Monitor } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import logo from "@/assets/mcm_logo.png";
 import light_logo from "@/assets/mcm_logo_light.png";
@@ -65,6 +72,10 @@ export default function LoginForm() {
   
   // State for remember password
   const [rememberPassword, setRememberPassword] = useState(false);
+  
+  // State for theme toggle
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [useSystemTheme, setUseSystemTheme] = useState(false);
 
   // Carregar histórico de login e credenciais salvas ao iniciar o componente
   useEffect(() => {
@@ -79,6 +90,22 @@ export default function LoginForm() {
       // Apenas definimos o estado de lembrar senha como true se houver credenciais salvas
       setRememberPassword(true);
       // Não preenchemos automaticamente os campos, isso será feito apenas ao clicar no usuário
+    }
+    
+    // Verificar preferência de tema do sistema
+    const systemThemePreference = localStorage.getItem("useSystemTheme");
+    if (systemThemePreference === "true") {
+      setUseSystemTheme(true);
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      setIsDarkMode(prefersDark);
+      document.documentElement.classList.toggle("dark", prefersDark);
+    } else {
+      // Verificar preferência de tema manual
+      const darkModePreference = localStorage.getItem("darkMode");
+      if (darkModePreference === "true") {
+        setIsDarkMode(true);
+        document.documentElement.classList.add("dark");
+      }
     }
   }, []);
 
@@ -406,6 +433,28 @@ export default function LoginForm() {
     }
   };
 
+  // Função para alternar o tema
+  const handleThemeToggle = () => {
+    const newThemeState = !isDarkMode;
+    setIsDarkMode(newThemeState);
+    document.documentElement.classList.toggle("dark");
+    localStorage.setItem("darkMode", newThemeState.toString());
+  };
+  
+  // Função para alternar o uso do tema do sistema
+  const handleSystemThemeToggle = () => {
+    const newSystemThemeState = !useSystemTheme;
+    setUseSystemTheme(newSystemThemeState);
+    localStorage.setItem("useSystemTheme", newSystemThemeState.toString());
+    
+    if (newSystemThemeState) {
+      // Usar preferência do sistema
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      setIsDarkMode(prefersDark);
+      document.documentElement.classList.toggle("dark", prefersDark);
+    }
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="flex bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden max-w-4xl w-full">
@@ -413,7 +462,10 @@ export default function LoginForm() {
         <div className="w-1/3 bg-blue-600 dark:bg-blue-800 p-8 flex flex-col justify-between">
           <div>
             <div className="flex justify-center mb-8">
-              <img src={light_logo} alt="Crysor Tech Logo" className="h-20 w-auto" />
+              {/* Logo para modo claro */}
+              <img src={logo} alt="Crysor Tech Logo (light mode)" className="dark:hidden h-20 w-auto" />
+              {/* Logo para modo escuro */}
+              <img src={light_logo} alt="Crysor Tech Logo (dark mode)" className="hidden dark:block h-20 w-auto" />
             </div>
             {loginHistory.length > 0 && (
               <div className="space-y-4">
@@ -468,8 +520,37 @@ export default function LoginForm() {
         {/* Seção direita - Formulário de login */}
         <div className="w-2/3 p-8">
           <div className="max-w-md mx-auto">
-            <div className="mb-8">
-              {/* Título 'Login' removido conforme solicitado */}
+            <div className="mb-8 flex justify-end">
+              {/* Menu dropdown de tema */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    {isDarkMode ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => {
+                    if (useSystemTheme) handleSystemThemeToggle();
+                    if (isDarkMode) handleThemeToggle();
+                  }}>
+                    <Sun className="h-4 w-4 mr-2" />
+                    Tema Claro
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => {
+                    if (useSystemTheme) handleSystemThemeToggle();
+                    if (!isDarkMode) handleThemeToggle();
+                  }}>
+                    <Moon className="h-4 w-4 mr-2" />
+                    Tema Escuro
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => {
+                    if (!useSystemTheme) handleSystemThemeToggle();
+                  }}>
+                    <Monitor className="h-4 w-4 mr-2" />
+                    Tema do Sistema
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             
             <form onSubmit={handleSubmit} className="space-y-6">

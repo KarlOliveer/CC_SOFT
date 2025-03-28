@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { useRoutes, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Home from "./components/home";
 import ProjectsPage from "./components/projects/ProjectsPage";
 import MaterialsPage from "./components/materials/MaterialPage";
@@ -10,7 +10,7 @@ import LoginForm from "./components/auth/LoginForm";
 import ResetPassword from "./components/auth/ResetPassword";
 import PrivateRoute from "./components/auth/PrivateRoute";
 import UserManagement from "./components/users/UserManagement";
-import routes from "tempo-routes";
+import SettingsPage from "./components/settings/SettingsPage";
 
 
 function App() {
@@ -108,11 +108,19 @@ function App() {
           }
         />
 
-        {import.meta.env.VITE_TEMPO === "true" && <Route path="/tempobook/*" />}
+        <Route
+          path="/configuracoes"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <SettingsPage />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      {import.meta.env.VITE_TEMPO === "true" && useRoutes(routes)}
     </Suspense>
   );
 }

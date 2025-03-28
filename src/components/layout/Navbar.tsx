@@ -8,19 +8,12 @@ import {
   Package,
   TestTube,
   MessageSquare,
-  Truck,
-  ClipboardCheck,
   Users,
-  User,
-  Search,
-  Filter,
-  Download,
   Sun,
   Moon,
-  Settings,
+  Monitor,
 } from "lucide-react";
 import UserProfileDialog from "@/components/profile/UserProfileDialog";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,16 +21,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  TooltipProvider,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
   NavigationMenu,
   NavigationMenuList,
   NavigationMenuItem,
-  NavigationMenuLink,
 } from "@/components/ui/navigation-menu";
 
 // Importa a imagem que está em src/assets/mcm_logo.png
@@ -50,24 +36,21 @@ const navItems = [
   { label: "Materiais", icon: Package, href: "/materiais" },
   { label: "Testes", icon: TestTube, href: "/testes" },
   { label: "Pedidos", icon: MessageSquare, href: "/pedidos" },
-  { label: "Configurações", icon: Settings, href: "/configuracoes" },
   { label: "Usuários", icon: Users, href: "/usuarios" },
 ];
 
 interface NavbarProps {
-  onSearch?: (query: string) => void;
-  onFilterChange?: (filter: string) => void;
-  onExport?: (format: "pdf" | "csv") => void;
   onThemeToggle?: () => void;
+  onSystemThemeToggle?: () => void;
   isDarkMode?: boolean;
+  useSystemTheme?: boolean;
 }
 
 const Navbar = ({
-  onSearch = () => {},
-  onFilterChange = () => {},
-  onExport = () => {},
   onThemeToggle = () => {},
+  onSystemThemeToggle = () => {},
   isDarkMode = false,
+  useSystemTheme = false,
 }: NavbarProps) => {
   const navigate = useNavigate();
   const username = localStorage.getItem("user");
@@ -185,10 +168,36 @@ const Navbar = ({
         
         {/* Actions section */}
         <div className="flex items-center gap-2">
-          {/* Theme toggle */}
-          <Button variant="ghost" size="icon" onClick={onThemeToggle}>
-            {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </Button>
+          {/* Theme dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                {isDarkMode ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => {
+                if (useSystemTheme) onSystemThemeToggle();
+                if (isDarkMode) onThemeToggle();
+              }}>
+                <Sun className="h-4 w-4 mr-2" />
+                Tema Claro
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                if (useSystemTheme) onSystemThemeToggle();
+                if (!isDarkMode) onThemeToggle();
+              }}>
+                <Moon className="h-4 w-4 mr-2" />
+                Tema Escuro
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                if (!useSystemTheme) onSystemThemeToggle();
+              }}>
+                <Monitor className="h-4 w-4 mr-2" />
+                Tema do Sistema
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* User profile dropdown */}
           <DropdownMenu>
